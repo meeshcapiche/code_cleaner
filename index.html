@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobrand Cleaner</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brandlockup">
+      <div class="brandicon">✂</div>
+      <div>
+        <h1>Cobrand Cleaner</h1>
+        <p>Email Assembly Tool</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button id="copyBtn" class="btn ghost" type="button">Copy HTML</button>
+      <button id="downloadBtn" class="btn primary" type="button">Download</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar">
+      <section class="sidebar-section">
+        <h2>Client Email HTML</h2>
+        <p>Paste the raw HTML from your advertising client below.</p>
+        <textarea id="inputHtml" class="codebox inputbox" spellcheck="false" placeholder="Paste client email HTML here…"></textarea>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>Brand Template</h2>
+        <p>Pick the brand whose header &amp; footer will wrap the client email.</p>
+        <select id="brandSelect" class="select">
+          <option value="">Choose a brand…</option>
+          <option value="thinkadvisor">ThinkAdvisor</option>
+        </select>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>Processing Options</h2>
+
+        <label class="toggle-card">
+          <input id="toggleWrapBrand" type="checkbox" checked>
+          <span class="toggle-ui"></span>
+          <span class="toggle-copy">
+            <strong>Wrap with Brand Template</strong>
+            <small>Adds the selected brand’s header and footer around the client content.</small>
+          </span>
+        </label>
+
+        <label class="toggle-card">
+          <input id="toggleRemovePreview" type="checkbox" checked>
+          <span class="toggle-ui"></span>
+          <span class="toggle-copy">
+            <strong>Remove Preview Text</strong>
+            <small>Strips only hidden preheader text so your ESP can set its own. Visible content is not touched.</small>
+          </span>
+        </label>
+
+        <label class="toggle-card">
+          <input id="toggleRemoveTitle" type="checkbox" checked>
+          <span class="toggle-ui"></span>
+          <span class="toggle-copy">
+            <strong>Remove Title Tag</strong>
+            <small>Removes the title tag since your ESP handles the subject line.</small>
+          </span>
+        </label>
+
+        <label class="toggle-card">
+          <input id="toggleRemoveUnsubs" type="checkbox" checked>
+          <span class="toggle-ui"></span>
+          <span class="toggle-copy">
+            <strong>Remove Unsubscribe Links</strong>
+            <small>Strips the client’s unsubscribe links because Omeda handles compliance.</small>
+          </span>
+        </label>
+
+        <label class="toggle-card">
+          <input id="toggleRemoveStyles" type="checkbox">
+          <span class="toggle-ui"></span>
+          <span class="toggle-copy">
+            <strong>Remove Style Blocks</strong>
+            <small>Removes style tags only when they conflict with the template.</small>
+          </span>
+        </label>
+      </section>
+
+      <section class="sidebar-section qa-section">
+        <div class="section-head">
+          <h2>QA Report</h2>
+          <span id="qaCount" class="qa-pill">0 issues</span>
+        </div>
+        <div id="qaReport" class="qa-list">
+          <div class="qa-item ok">
+            <div class="qa-title">Ready</div>
+            <div class="qa-text">Paste client HTML to begin.</div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="mainpanel">
+      <div class="preview-toolbar">
+        <div class="preview-modes">
+          <button class="mode-btn active" data-preview-mode="desktop" type="button">Desktop</button>
+          <button class="mode-btn" data-preview-mode="mobile" type="button">Mobile</button>
+        </div>
+      </div>
+
+      <div class="preview-shell">
+        <iframe id="previewFrame" title="Email preview"></iframe>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
