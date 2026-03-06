@@ -30,6 +30,7 @@ window.addEventListener("DOMContentLoaded", () => {
 </table>
   `;
 
+  const appEl = document.querySelector(".app");
   const inputHtml = document.getElementById("inputHtml");
   const previewFrame = document.getElementById("previewFrame");
   const qaReport = document.getElementById("qaReport");
@@ -37,9 +38,15 @@ window.addEventListener("DOMContentLoaded", () => {
   const brandSelect = document.getElementById("brandSelect");
   const copyBtn = document.getElementById("copyBtn");
   const downloadBtn = document.getElementById("downloadBtn");
+  const previewPane = document.getElementById("previewPane");
+  const codePane = document.getElementById("codePane");
+  const codeOutputInner = document.getElementById("codeOutputInner");
+  const dropWrap = document.getElementById("dropWrap");
+  const clearBtn = document.getElementById("clearBtn");
 
   const outputStore = { html: "" };
   let previewMode = "desktop";
+  let outputMode = "fragment";
 
   function stripOuterDocument(html) {
     let s = html || "";
@@ -54,10 +61,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function removeTitleTag(html) {
     return (html || "").replace(/<title\b[\s\S]*?>[\s\S]*?<\/title>\s*/gi, "");
-  }
-
-  function removeStyleBlocks(html) {
-    return (html || "").replace(/<style\b[\s\S]*?<\/style>\s*/gi, "");
   }
 
   function removeClientPreheader(html) {
@@ -90,44 +93,51 @@ window.addEventListener("DOMContentLoaded", () => {
     return out.join("");
   }
 
+  function hasValidFullEmailSelection() {
+    return outputMode !== "full" || !!brandSelect.value;
+  }
+
+  function updateActionButtons() {
+    const enabled = hasValidFullEmailSelection();
+
+    copyBtn.disabled = !enabled;
+    downloadBtn.disabled = !enabled;
+
+    copyBtn.classList.toggle("is-disabled", !enabled);
+    downloadBtn.classList.toggle("is-disabled", !enabled);
+  }
+
   function getProcessedClientHtml() {
     let client = inputHtml.value.trim();
 
     if (!client) {
-      return sampleClientHtml.trim();
+      client = sampleClientHtml.trim();
     }
 
     client = stripOuterDocument(client);
 
-    if (document.getElementById("toggleRemovePreview").checked) {
+    if (document.getElementById("toggleRemovePreview")?.checked) {
       client = removeClientPreheader(client);
     }
 
-    if (document.getElementById("toggleRemoveTitle").checked) {
+    if (document.getElementById("toggleRemoveTitle")?.checked) {
       client = removeTitleTag(client);
     }
 
-    if (document.getElementById("toggleRemoveUnsubs").checked) {
+    if (document.getElementById("toggleRemoveUnsubs")?.checked) {
       client = removeUnsubscribeBlocks(client);
-    }
-
-    if (document.getElementById("toggleRemoveStyles").checked) {
-      client = removeStyleBlocks(client);
     }
 
     return client.trim();
   }
 
-  function buildFinalEmailHtml() {
+  function buildFullEmailHtml() {
     const brandKey = brandSelect.value;
-    const wrapBrand = document.getElementById("toggleWrapBrand").checked;
     const brand = brandPresets[brandKey];
     const client = getProcessedClientHtml();
 
-    let finalInner = client;
-
-    if (wrapBrand && brand) {
-      finalInner = `${brand.header}${client}${brand.footer}`;
+    if (!brand) {
+      return "";
     }
 
     return `<!DOCTYPE html>
@@ -138,9 +148,17 @@ window.addEventListener("DOMContentLoaded", () => {
 <title>Cobrand Email</title>
 </head>
 <body style="background:#fff;margin:0;padding:0;">
-${finalInner}
+${brand.header}${client}${brand.footer}
 </body>
 </html>`;
+  }
+
+  function buildFragmentHtml() {
+    return getProcessedClientHtml();
+  }
+
+  function getCurrentOutputHtml() {
+    return outputMode === "fragment" ? buildFragmentHtml() : buildFullEmailHtml();
   }
 
   function buildPreviewDoc(finalHtml) {
@@ -246,24 +264,126 @@ ${finalInner}
     qaCount.textContent = warnCount ? `${warnCount} high` : "0 issues";
     qaCount.className = `qa-pill ${warnCount ? "high" : "ok"}`;
 
-    qaReport.innerHTML = issues
-      .map(
-        item => `
+    qaReport.innerHTML = issues.map(item => `
       <div class="qa-item ${item.level}">
         <div class="qa-title">${item.title}</div>
         <div class="qa-text">${item.text}</div>
       </div>
-    `
-      )
-      .join("");
+    `).join("");
+  }
+
+  function prettyPrintHtml(html) {
+    const tab = "  ";
+    let formatted = "";
+    let indent = 0;
+
+    html
+      .replace(/>\s*</g, ">\n<")
+      .split("\n")
+      .forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        if (/^<\/.+>/.test(trimmed)) indent = Math.max(indent - 1, 0);
+
+        formatted += tab.repeat(indent) + trimmed + "\n";
+
+        if (
+          /^<[^!/][^>]*[^/]>$/.test(trimmed) &&
+          !/^<(meta|img|br|hr|input|link)\b/i.test(trimmed) &&
+          !/^<.*<\/.*>$/.test(trimmed)
+        ) {
+          indent += 1;
+        }
+      });
+
+    return formatted.trim();
+  }
+
+  function setViewMode(mode) {
+    previewMode = mode;
+
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.previewMode === mode);
+    });
+
+    if (mode === "code") {
+      previewPane.classList.remove("active");
+      codePane.classList.add("active");
+    } else {
+      codePane.classList.remove("active");
+      previewPane.classList.add("active");
+    }
+  }
+
+  function setOutputMode(mode) {
+    outputMode = mode;
+
+    document.querySelectorAll(".switch-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.outputMode === mode);
+    });
+
+    appEl.classList.toggle("is-fragment", mode === "fragment");
+    updateActionButtons();
+    updatePreview();
   }
 
   function updatePreview() {
     try {
-      const finalHtml = buildFinalEmailHtml();
+      if (outputMode === "full" && !brandSelect.value) {
+        outputStore.html = "";
+        updateActionButtons();
+
+        if (previewMode === "code") {
+          codeOutputInner.value = "Select a brand to generate a full email.";
+        } else {
+          previewFrame.srcdoc = `
+            <html>
+              <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
+                <div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#667085;padding:40px;text-align:center;">
+                  Select a brand to generate a full email.
+                </div>
+              </body>
+            </html>
+          `;
+        }
+
+        renderQA([
+          {
+            level: "warn",
+            title: "Brand required for full email",
+            text: "Choose a brand template before copying or downloading a full email."
+          }
+        ]);
+
+        return;
+      }
+
+      const finalHtml = getCurrentOutputHtml();
       outputStore.html = finalHtml;
-      previewFrame.srcdoc = buildPreviewDoc(finalHtml);
-      renderQA(runQA(finalHtml, inputHtml.value.trim()));
+      updateActionButtons();
+
+      if (previewMode === "code") {
+        const pretty = prettyPrintHtml(finalHtml);
+        codeOutputInner.value = pretty;
+      } else {
+        previewFrame.srcdoc = buildPreviewDoc(finalHtml);
+      }
+
+      const issues = runQA(finalHtml, inputHtml.value.trim());
+
+      if (outputMode === "fragment") {
+        const styleBlocks = (finalHtml.match(/<style\b[\s\S]*?<\/style>/gi) || []).length;
+        if (styleBlocks) {
+          issues.unshift({
+            level: "ok",
+            title: `${styleBlocks} style block(s) kept`,
+            text: "Style blocks were preserved to protect responsiveness and email layout."
+          });
+        }
+      }
+
+      renderQA(issues);
     } catch (err) {
       console.error(err);
       qaCount.textContent = "error";
@@ -279,6 +399,7 @@ ${finalInner}
 
   async function copyOutput() {
     if (!outputStore.html) return;
+
     try {
       await navigator.clipboard.writeText(outputStore.html);
       copyBtn.textContent = "Copied!";
@@ -293,11 +414,12 @@ ${finalInner}
   function downloadOutput() {
     if (!outputStore.html) return;
 
-    const blob = new Blob([outputStore.html], { type: "text/html;charset=utf-8" });
+    const filename = outputMode === "fragment" ? "clean-fragment.txt" : "cobrand-email.html";
+    const blob = new Blob([outputStore.html], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "cobrand-email.html";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -308,6 +430,8 @@ ${finalInner}
     inputHtml.value = "";
     brandSelect.value = "";
     outputStore.html = "";
+    codeOutputInner.value = "";
+
     previewFrame.srcdoc = `
       <html>
         <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
@@ -317,6 +441,7 @@ ${finalInner}
         </body>
       </html>
     `;
+
     renderQA([
       {
         level: "ok",
@@ -324,56 +449,69 @@ ${finalInner}
         text: "Paste client HTML to begin."
       }
     ]);
+
+    updateActionButtons();
+  }
+
+  function loadFile(file) {
+    if (!file) return;
+    if (!(file.name.endsWith(".html") || file.type === "text/html" || file.type === "text/plain")) return;
+
+    const reader = new FileReader();
+    reader.onload = event => {
+      inputHtml.value = event.target.result;
+      updatePreview();
+    };
+    reader.readAsText(file);
   }
 
   copyBtn.addEventListener("click", copyOutput);
   downloadBtn.addEventListener("click", downloadOutput);
+  clearBtn.addEventListener("click", clearAll);
 
   inputHtml.addEventListener("input", updatePreview);
   brandSelect.addEventListener("change", updatePreview);
 
-  ["toggleWrapBrand", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveUnsubs", "toggleRemoveStyles"].forEach(id => {
+  ["toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveUnsubs"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("change", updatePreview);
   });
 
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      previewMode = btn.dataset.previewMode;
+      setViewMode(btn.dataset.previewMode);
       updatePreview();
     });
   });
 
+  document.querySelectorAll(".switch-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setOutputMode(btn.dataset.outputMode);
+    });
+  });
+
+  ["dragenter", "dragover"].forEach(type => {
+    dropWrap.addEventListener(type, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropWrap.classList.add("dragover");
+    });
+  });
+
+  ["dragleave", "drop"].forEach(type => {
+    dropWrap.addEventListener(type, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropWrap.classList.remove("dragover");
+    });
+  });
+
+  dropWrap.addEventListener("drop", e => {
+    const file = e.dataTransfer.files[0];
+    loadFile(file);
+  });
+
   clearAll();
-});
-
-document.addEventListener("drop", e => {
-
-  e.preventDefault();
-
-  const file = e.dataTransfer.files[0];
-
-  if (!file) return;
-
-  if (file.name.endsWith(".html")) {
-
-    const reader = new FileReader();
-
-    reader.onload = function(event) {
-
-      inputHtml.value = event.target.result;
-      updatePreview();
-
-    };
-
-    reader.readAsText(file);
-
-  }
-
-});
-
-document.addEventListener("dragover", e => {
-  e.preventDefault();
+  setOutputMode("fragment");
+  setViewMode("desktop");
 });

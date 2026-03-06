@@ -20,6 +20,7 @@
     </div>
 
     <div class="topbar-actions">
+      <button id="clearBtn" class="btn ghost" type="button">Clear</button>
       <button id="copyBtn" class="btn ghost" type="button">Copy HTML</button>
       <button id="downloadBtn" class="btn primary" type="button">Download</button>
     </div>
@@ -44,12 +45,12 @@
 
 <section class="sidebar-section">
   <h2>Generate</h2>
-  <p>Choose whether to build a full email or just a cleaned client fragment for Omeda.</p>
+  <p>Choose whether to build a full email or just a cleaned fragment of code for Omeda's designer.</p>
 
-  <div class="mode-switch" id="outputModeSwitch">
-    <button class="switch-btn active" data-output-mode="full" type="button">Full email</button>
-    <button class="switch-btn" data-output-mode="fragment" type="button">Clean fragment</button>
-  </div>
+<div class="mode-switch" id="outputModeSwitch">
+  <button class="switch-btn" data-output-mode="full" type="button">Full email</button>
+  <button class="switch-btn active" data-output-mode="fragment" type="button">Clean fragment</button>
+</div>
 </section>
 
 <section class="sidebar-section" id="brandSection">
@@ -64,50 +65,34 @@
       <section class="sidebar-section">
         <h2>Processing Options</h2>
 
-        <label class="toggle-card">
-          <input id="toggleWrapBrand" type="checkbox" checked>
-          <span class="toggle-ui"></span>
-          <span class="toggle-copy">
-            <strong>Wrap with Brand Template</strong>
-            <small>Adds the selected brand’s header and footer around the client content.</small>
-          </span>
-        </label>
+        
 
-        <label class="toggle-card">
-          <input id="toggleRemovePreview" type="checkbox" checked>
-          <span class="toggle-ui"></span>
-          <span class="toggle-copy">
-            <strong>Remove Preview Text</strong>
-            <small>Strips only hidden preheader text so your ESP can set its own. Visible content is not touched.</small>
-          </span>
-        </label>
+<label class="toggle-card">
+  <input id="toggleRemovePreview" type="checkbox" checked>
+  <span class="toggle-ui"></span>
+  <span class="toggle-copy">
+    <strong>Remove Preview Text</strong>
+    <small>Strips only hidden preheader text so your ESP can set its own. Visible content is not touched.</small>
+  </span>
+</label>
 
-        <label class="toggle-card">
-          <input id="toggleRemoveTitle" type="checkbox" checked>
-          <span class="toggle-ui"></span>
-          <span class="toggle-copy">
-            <strong>Remove Title Tag</strong>
-            <small>Removes the title tag since your ESP handles the subject line.</small>
-          </span>
-        </label>
+<label class="toggle-card">
+  <input id="toggleRemoveTitle" type="checkbox" checked>
+  <span class="toggle-ui"></span>
+  <span class="toggle-copy">
+    <strong>Remove Title Tag</strong>
+    <small>Removes the title tag since your ESP handles the subject line.</small>
+  </span>
+</label>
 
-        <label class="toggle-card">
-          <input id="toggleRemoveUnsubs" type="checkbox" checked>
-          <span class="toggle-ui"></span>
-          <span class="toggle-copy">
-            <strong>Remove Unsubscribe Links</strong>
-            <small>Strips the client’s unsubscribe links because Omeda handles compliance.</small>
-          </span>
-        </label>
-
-        <label class="toggle-card">
-          <input id="toggleRemoveStyles" type="checkbox">
-          <span class="toggle-ui"></span>
-          <span class="toggle-copy">
-            <strong>Remove Style Blocks</strong>
-            <small>Removes style tags only when they conflict with the template.</small>
-          </span>
-        </label>
+<label class="toggle-card">
+  <input id="toggleRemoveUnsubs" type="checkbox" checked>
+  <span class="toggle-ui"></span>
+  <span class="toggle-copy">
+    <strong>Remove Unsubscribe Links</strong>
+    <small>Strips the client’s unsubscribe links because Omeda handles compliance.</small>
+  </span>
+</label>
       </section>
 
       <section class="sidebar-section qa-section">
@@ -125,23 +110,26 @@
     </aside>
 
     <section class="mainpanel">
-      <div class="preview-toolbar">
-        <div class="preview-modes">
-         <button class="mode-btn active" data-preview-mode="desktop" type="button">Desktop</button>
-    <button class="mode-btn" data-preview-mode="mobile" type="button">Mobile</button>
-    <button class="mode-btn" data-preview-mode="code" type="button">Code</button>
-        </div>
-      </div>
-
-<div class="preview-shell">
-  <div id="previewPane" class="view-pane active">
-    <iframe id="previewFrame" title="Email preview"></iframe>
+  <div class="preview-toolbar">
+    <div class="preview-modes">
+      <button class="mode-btn active" data-preview-mode="desktop" type="button">Desktop</button>
+      <button class="mode-btn" data-preview-mode="mobile" type="button">Mobile</button>
+      <button class="mode-btn" data-preview-mode="code" type="button">Code</button>
+    </div>
   </div>
 
-  <div id="codePane" class="view-pane code-pane">
-    <pre id="codeOutput" class="pretty-code"><code id="codeOutputInner"></code></pre>
+  <div class="preview-shell">
+    <div id="previewPane" class="view-pane active">
+      <iframe id="previewFrame" title="Email preview"></iframe>
+    </div>
+
+    <div id="codePane" class="view-pane code-pane">
+      <textarea id="codeOutputInner" class="pretty-code pretty-code-area" spellcheck="false" readonly></textarea>
+    </div>
   </div>
-</div>
-    </section>
+</section>
   </main>
 </div>
+
+</body>
+</html>
