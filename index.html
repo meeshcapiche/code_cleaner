@@ -27,20 +27,39 @@
 
   <main class="workspace">
     <aside class="sidebar">
-      <section class="sidebar-section">
-        <h2>Client Email HTML</h2>
-        <p>Paste the raw HTML from your advertising client below.</p>
-        <textarea id="inputHtml" class="codebox inputbox" spellcheck="false" placeholder="Paste client email HTML here…"></textarea>
-      </section>
+<section class="sidebar-section">
+  <h2>Client Email HTML</h2>
+  <p>Paste the raw HTML from your advertising client below or drag in an .html file.</p>
 
-      <section class="sidebar-section">
-        <h2>Brand Template</h2>
-        <p>Pick the brand whose header &amp; footer will wrap the client email.</p>
-        <select id="brandSelect" class="select">
-          <option value="">Choose a brand…</option>
-          <option value="thinkadvisor">ThinkAdvisor</option>
-        </select>
-      </section>
+  <div class="dropwrap" id="dropWrap">
+    <textarea
+      id="inputHtml"
+      class="codebox inputbox"
+      spellcheck="false"
+      placeholder="Paste client email HTML here or drop an .html file…"
+    ></textarea>
+    <div class="dropnote" id="dropNote">Drop HTML file here</div>
+  </div>
+</section>
+
+<section class="sidebar-section">
+  <h2>Generate</h2>
+  <p>Choose whether to build a full email or just a cleaned client fragment for Omeda.</p>
+
+  <div class="mode-switch" id="outputModeSwitch">
+    <button class="switch-btn active" data-output-mode="full" type="button">Full email</button>
+    <button class="switch-btn" data-output-mode="fragment" type="button">Clean fragment</button>
+  </div>
+</section>
+
+<section class="sidebar-section" id="brandSection">
+  <h2>Brand Template</h2>
+  <p>Pick the brand whose header and footer will wrap the client email.</p>
+  <select id="brandSelect" class="select">
+    <option value="">Choose a brand…</option>
+    <option value="thinkadvisor">ThinkAdvisor</option>
+  </select>
+</section>
 
       <section class="sidebar-section">
         <h2>Processing Options</h2>
@@ -108,16 +127,21 @@
     <section class="mainpanel">
       <div class="preview-toolbar">
         <div class="preview-modes">
-          <button class="mode-btn active" data-preview-mode="desktop" type="button">Desktop</button>
-          <button class="mode-btn" data-preview-mode="mobile" type="button">Mobile</button>
+         <button class="mode-btn active" data-preview-mode="desktop" type="button">Desktop</button>
+    <button class="mode-btn" data-preview-mode="mobile" type="button">Mobile</button>
+    <button class="mode-btn" data-preview-mode="code" type="button">Code</button>
         </div>
       </div>
 
-      <div class="preview-shell">
-        <iframe id="previewFrame" title="Email preview"></iframe>
-      </div>
+<div class="preview-shell">
+  <div id="previewPane" class="view-pane active">
+    <iframe id="previewFrame" title="Email preview"></iframe>
+  </div>
+
+  <div id="codePane" class="view-pane code-pane">
+    <pre id="codeOutput" class="pretty-code"><code id="codeOutputInner"></code></pre>
+  </div>
+</div>
     </section>
   </main>
 </div>
-</body>
-</html>
