@@ -1,8 +1,4 @@
-import { thinkadvisor } from "./brands/thinkadvisor.js";
-
-const brandPresets = {
-  thinkadvisor
-};
+import { brands, brandPresets } from "./brands/index.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const sampleClientHtml = `
@@ -36,17 +32,135 @@ window.addEventListener("DOMContentLoaded", () => {
   const qaReport = document.getElementById("qaReport");
   const qaCount = document.getElementById("qaCount");
   const brandSelect = document.getElementById("brandSelect");
+  const toggleTemplateOptionsBtn = document.getElementById("toggleTemplateOptionsBtn");
+  const templateControls = document.getElementById("templateControls");
+  const resetTemplateOptionsBtn = document.getElementById("resetTemplateOptionsBtn");
+  const headerBgColor = document.getElementById("headerBgColor");
+  const footerBgColor = document.getElementById("footerBgColor");
+  const headerBgValue = document.getElementById("headerBgValue");
+  const footerBgValue = document.getElementById("footerBgValue");
+  const toggleMatchFooterColor = document.getElementById("toggleMatchFooterColor");
+  const toggleShowDividers = document.getElementById("toggleShowDividers");
   const copyBtn = document.getElementById("copyBtn");
   const downloadBtn = document.getElementById("downloadBtn");
+  const copyBtnLabel = copyBtn.querySelector(".btn-label");
   const previewPane = document.getElementById("previewPane");
   const codePane = document.getElementById("codePane");
   const codeOutputInner = document.getElementById("codeOutputInner");
   const dropWrap = document.getElementById("dropWrap");
-  const clearBtn = document.getElementById("clearBtn");
+  const clearInputBtn = document.getElementById("clearInputBtn");
 
   const outputStore = { html: "" };
   let previewMode = "desktop";
   let outputMode = "fragment";
+  let templateOptionsOpen = false;
+  const defaultTemplateOptions = {
+    headerBg: "#ffffff",
+    footerBg: "#ffffff",
+    matchFooterColor: false,
+    showDividers: true
+  };
+
+  function populateBrandOptions() {
+    const currentValue = brandSelect.value;
+
+    brandSelect.innerHTML = '<option value="">Choose a brand…</option>';
+    brands.forEach(brand => {
+      const option = document.createElement("option");
+      option.value = brand.id;
+      option.textContent = brand.name;
+      brandSelect.appendChild(option);
+    });
+
+    if (brandPresets[currentValue]) {
+      brandSelect.value = currentValue;
+    }
+  }
+
+  function formatHex(value) {
+    return (value || "#ffffff").toUpperCase();
+  }
+
+  function updateColorLabels() {
+    if (headerBgValue && headerBgColor) headerBgValue.textContent = formatHex(headerBgColor.value);
+    if (footerBgValue && footerBgColor) footerBgValue.textContent = formatHex(footerBgColor.value);
+  }
+
+  function syncFooterColorState() {
+    if (!footerBgColor) return;
+
+    const shouldMatch = !!toggleMatchFooterColor?.checked;
+    if (shouldMatch && headerBgColor) {
+      footerBgColor.value = headerBgColor.value;
+    }
+
+    footerBgColor.disabled = shouldMatch;
+    footerBgColor.closest(".field-card")?.classList.toggle("is-disabled", shouldMatch);
+    updateColorLabels();
+  }
+
+  function resetTemplateOptions() {
+    if (headerBgColor) headerBgColor.value = defaultTemplateOptions.headerBg;
+    if (footerBgColor) footerBgColor.value = defaultTemplateOptions.footerBg;
+    if (toggleMatchFooterColor) toggleMatchFooterColor.checked = defaultTemplateOptions.matchFooterColor;
+    if (toggleShowDividers) toggleShowDividers.checked = defaultTemplateOptions.showDividers;
+    syncFooterColorState();
+    updatePreview();
+  }
+
+  function extractStyleBlocks(html) {
+    const styleBlocks = [];
+    const htmlWithoutStyles = (html || "").replace(/<style\b[\s\S]*?<\/style>\s*/gi, match => {
+      styleBlocks.push(match.trim());
+      return "";
+    });
+
+    return { htmlWithoutStyles, styleBlocks };
+  }
+
+  function extractHeadHtml(html) {
+    const match = (html || "").match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
+    return match ? match[1] : "";
+  }
+
+  function extractBodyOpenTag(html) {
+    const match = (html || "").match(/<body\b([^>]*)>/i);
+    return match ? match[1] || "" : "";
+  }
+
+  function extractPreservableHeadMarkup(headHtml) {
+    const source = headHtml || "";
+    const preserved = [];
+
+    source.replace(/<style\b[\s\S]*?<\/style>\s*/gi, match => {
+      preserved.push(match.trim());
+      return match;
+    });
+
+    source.replace(/<!--\[if[\s\S]*?<!\[endif\]-->\s*/gi, match => {
+      if (/<style\b/i.test(match) || /\bmso\b/i.test(match)) {
+        preserved.push(match.trim());
+      }
+      return match;
+    });
+
+    return preserved.join("\n");
+  }
+
+  function buildMergedBodyAttributes(sourceAttrs) {
+    const rawAttrs = sourceAttrs || "";
+    const safeAttrs = rawAttrs
+      .replace(/\s+on[a-z-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+      .trim();
+
+    const styleMatch = safeAttrs.match(/\bstyle\s*=\s*("([^"]*)"|'([^']*)')/i);
+    const sourceStyle = styleMatch ? (styleMatch[2] || styleMatch[3] || "").trim() : "";
+    const attrsWithoutStyle = safeAttrs.replace(/\s*style\s*=\s*(?:"[^"]*"|'[^']*')/gi, "").trim();
+    const baseStyle = "background:#fff;margin:0;padding:0;";
+    const mergedStyle = sourceStyle ? `${baseStyle}${sourceStyle}` : baseStyle;
+
+    return `${attrsWithoutStyle ? `${attrsWithoutStyle} ` : ""}style="${mergedStyle}"`.trim();
+  }
 
   function stripOuterDocument(html) {
     let s = html || "";
@@ -63,6 +177,12 @@ window.addEventListener("DOMContentLoaded", () => {
     return (html || "").replace(/<title\b[\s\S]*?>[\s\S]*?<\/title>\s*/gi, "");
   }
 
+  function removeScripts(html) {
+    return (html || "")
+      .replace(/<script\b[\s\S]*?>[\s\S]*?<\/script>\s*/gi, "")
+      .replace(/<script\b[^>]*\/?>\s*/gi, "");
+  }
+
   function removeClientPreheader(html) {
     let s = html || "";
     s = s.replace(/<span\b[^>]*style=["'][^"']*(display\s*:\s*none|mso-hide\s*:\s*all|opacity\s*:\s*0)[^"']*["'][^>]*>[\s\S]*?<\/span>/gi, "");
@@ -70,27 +190,13 @@ window.addEventListener("DOMContentLoaded", () => {
     return s.trim();
   }
 
-  function removeUnsubscribeBlocks(html) {
-    const chunks = (html || "").split(/(?=<p\b)|(?=<div\b)|(?=<table\b)|(?=<tr\b)|(?=<td\b)/i);
-    const out = [];
-
-    for (const chunk of chunks) {
-      const lower = chunk.toLowerCase();
-      const isUnsub =
-        lower.includes("unsubscribe") ||
-        lower.includes("opt-out") ||
-        lower.includes("opt out") ||
-        lower.includes("manage your email preferences") ||
-        lower.includes("email preferences") ||
-        lower.includes("preference center") ||
-        lower.includes("preferences center") ||
-        lower.includes("confirmunsubscribelink") ||
-        lower.includes("preferencepagelink");
-
-      if (!isUnsub) out.push(chunk);
-    }
-
-    return out.join("");
+  function stripKnownBrandWrappers(html) {
+    return Object.values(brandPresets).reduce((current, brand) => {
+      if (typeof brand.stripWrappedTemplate === "function") {
+        return brand.stripWrappedTemplate(current);
+      }
+      return current;
+    }, html || "");
   }
 
   function hasValidFullEmailSelection() {
@@ -107,38 +213,96 @@ window.addEventListener("DOMContentLoaded", () => {
     downloadBtn.classList.toggle("is-disabled", !enabled);
   }
 
-  function getProcessedClientHtml() {
+  function updateTemplateOptionsVisibility() {
+    const canEditTemplate = outputMode === "full" && !!brandSelect.value;
+
+    if (!canEditTemplate) {
+      templateOptionsOpen = false;
+    }
+
+    if (toggleTemplateOptionsBtn) {
+      toggleTemplateOptionsBtn.hidden = !canEditTemplate;
+      toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateOptionsOpen && canEditTemplate));
+      const label = toggleTemplateOptionsBtn.querySelector(".btn-label");
+      if (label) {
+        label.textContent = templateOptionsOpen && canEditTemplate ? "Hide template options" : "Edit template options";
+      }
+    }
+
+    if (templateControls) {
+      templateControls.hidden = !(canEditTemplate && templateOptionsOpen);
+    }
+  }
+
+  function getProcessedClientContent() {
     let client = inputHtml.value.trim();
+    const keepStyles = document.getElementById("toggleKeepStyles")?.checked;
+    const removeScriptsEnabled = document.getElementById("toggleRemoveScripts")?.checked;
 
     if (!client) {
       client = sampleClientHtml.trim();
     }
 
-    client = stripOuterDocument(client);
+    client = stripKnownBrandWrappers(client);
 
-    if (document.getElementById("toggleRemovePreview")?.checked) {
-      client = removeClientPreheader(client);
-    }
+    const sourceHead = extractHeadHtml(client);
+    const sourceBodyAttrs = extractBodyOpenTag(client);
 
     if (document.getElementById("toggleRemoveTitle")?.checked) {
       client = removeTitleTag(client);
     }
 
-    if (document.getElementById("toggleRemoveUnsubs")?.checked) {
-      client = removeUnsubscribeBlocks(client);
+    if (removeScriptsEnabled) {
+      client = removeScripts(client);
     }
 
-    return client.trim();
+    let preservedHeadMarkup = "";
+    if (keepStyles) {
+      preservedHeadMarkup = extractPreservableHeadMarkup(sourceHead);
+    }
+
+    if (keepStyles) {
+      const { htmlWithoutStyles } = extractStyleBlocks(client);
+      client = stripOuterDocument(htmlWithoutStyles);
+    } else {
+      client = stripOuterDocument(client);
+      client = client.replace(/<style\b[\s\S]*?<\/style>\s*/gi, "");
+    }
+
+    if (document.getElementById("toggleRemovePreview")?.checked) {
+      client = removeClientPreheader(client);
+    }
+
+    return {
+      clientHtml: client.trim(),
+      preservedHeadMarkup,
+      bodyAttributes: buildMergedBodyAttributes(sourceBodyAttrs)
+    };
   }
 
   function buildFullEmailHtml() {
     const brandKey = brandSelect.value;
     const brand = brandPresets[brandKey];
-    const client = getProcessedClientHtml();
+    const { clientHtml, preservedHeadMarkup, bodyAttributes } = getProcessedClientContent();
 
     if (!brand) {
       return "";
     }
+
+    const headMarkup = preservedHeadMarkup ? `${preservedHeadMarkup}\n` : "\n";
+    const thinkAdvisorDefaultSurface =
+      brand.id === "thinkadvisor" &&
+      (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
+      (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
+    const brandOptions = {
+      headerBg: headerBgColor?.value || "#ffffff",
+      footerBg: (toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff",
+      showDividers: toggleShowDividers?.checked !== false,
+      headerDarkAttr: thinkAdvisorDefaultSurface ? 'data-cobrand-preserve-light="header"' : "",
+      footerDarkAttr: thinkAdvisorDefaultSurface ? 'data-cobrand-preserve-light="footer"' : ""
+    };
+    const brandHeader = typeof brand.renderHeader === "function" ? brand.renderHeader(brandOptions) : brand.header;
+    const brandFooter = typeof brand.renderFooter === "function" ? brand.renderFooter(brandOptions) : brand.footer;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -146,37 +310,179 @@ window.addEventListener("DOMContentLoaded", () => {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cobrand Email</title>
-</head>
-<body style="background:#fff;margin:0;padding:0;">
-${brand.header}${client}${brand.footer}
+${headMarkup}</head>
+<body ${bodyAttributes}>
+<!-- COBRAND_HEADER_START -->
+${brandHeader}
+<!-- COBRAND_HEADER_END -->
+${clientHtml}
+<!-- COBRAND_FOOTER_START -->
+${brandFooter}
+<!-- COBRAND_FOOTER_END -->
 </body>
 </html>`;
   }
 
   function buildFragmentHtml() {
-    return getProcessedClientHtml();
+    const { clientHtml, preservedHeadMarkup } = getProcessedClientContent();
+    return preservedHeadMarkup ? `${preservedHeadMarkup}\n${clientHtml}`.trim() : clientHtml;
   }
 
   function getCurrentOutputHtml() {
     return outputMode === "fragment" ? buildFragmentHtml() : buildFullEmailHtml();
   }
 
+  function buildGmailDarkModeScript() {
+    return `
+<script>
+  (function () {
+    function parseColor(value) {
+      if (!value) return null;
+      var input = String(value).trim().toLowerCase();
+      if (!input || input === "transparent" || input === "inherit") return null;
+
+      var hexMatch = input.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+      if (hexMatch) {
+        var hex = hexMatch[1];
+        if (hex.length === 3) {
+          hex = hex.split("").map(function (part) { return part + part; }).join("");
+        }
+        return {
+          r: parseInt(hex.slice(0, 2), 16),
+          g: parseInt(hex.slice(2, 4), 16),
+          b: parseInt(hex.slice(4, 6), 16)
+        };
+      }
+
+      var rgbMatch = input.match(/^rgba?\\(([^)]+)\\)$/);
+      if (!rgbMatch) return null;
+      var parts = rgbMatch[1].split(",").map(function (part) { return Number(part.trim()); });
+      if (parts.length < 3 || parts.some(function (part) { return Number.isNaN(part); })) return null;
+      return { r: parts[0], g: parts[1], b: parts[2] };
+    }
+
+    function luminance(color) {
+      if (!color) return null;
+      return (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b) / 255;
+    }
+
+    function shouldFlipBackground(color) {
+      var value = luminance(color);
+      return value !== null && value > 0.72;
+    }
+
+    function shouldFlipText(color) {
+      var value = luminance(color);
+      return value !== null && value < 0.45;
+    }
+
+    function applyDarkMode() {
+      var darkBg = "#0f172a";
+      var darkSurface = "#111827";
+        var lightText = "#f8fafc";
+        var mutedText = "#d1d5db";
+        var linkText = "#93c5fd";
+        var preserveBg = "#ffffff";
+        var preserveText = "#1f2937";
+
+      document.documentElement.style.backgroundColor = "#0b1220";
+      document.body.style.backgroundColor = "#0b1220";
+      document.body.style.color = lightText;
+
+      var elements = document.body.querySelectorAll("*");
+      elements.forEach(function (el) {
+        if (["IMG", "SVG", "PATH", "VIDEO", "SOURCE"].includes(el.tagName)) return;
+
+        var preserveLight = el.closest("[data-cobrand-preserve-light]");
+        if (preserveLight) {
+          el.style.setProperty("background-color", preserveBg, "important");
+          if (el.hasAttribute("bgcolor")) {
+            el.setAttribute("bgcolor", preserveBg);
+          }
+          if (el.tagName !== "A") {
+            el.style.setProperty("color", preserveText, "important");
+          }
+          return;
+        }
+
+        var style = window.getComputedStyle(el);
+        var inlineBackground = el.style.backgroundColor || el.getAttribute("bgcolor") || "";
+        var computedBackground = style.backgroundColor;
+        var backgroundColor = parseColor(inlineBackground) || parseColor(computedBackground);
+
+        if (shouldFlipBackground(backgroundColor)) {
+          el.style.setProperty("background-color", el.tagName === "BODY" ? "#0b1220" : darkSurface, "important");
+          if (el.hasAttribute("bgcolor")) {
+            el.setAttribute("bgcolor", el.tagName === "BODY" ? "#0b1220" : darkSurface);
+          }
+        }
+
+        var textColor = parseColor(el.style.color || style.color);
+        if (shouldFlipText(textColor)) {
+          el.style.setProperty("color", /^(small|span|p|td|div)$/i.test(el.tagName) ? mutedText : lightText, "important");
+        }
+
+        var borderTop = parseColor(style.borderTopColor);
+        if (borderTop && shouldFlipBackground(borderTop)) {
+          el.style.setProperty("border-top-color", "#374151", "important");
+        }
+
+        var borderColor = parseColor(style.borderColor);
+        if (borderColor && shouldFlipBackground(borderColor)) {
+          el.style.setProperty("border-color", "#374151", "important");
+        }
+
+        if (el.tagName === "A") {
+          el.style.setProperty("color", linkText, "important");
+        }
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", applyDarkMode, { once: true });
+    } else {
+      applyDarkMode();
+    }
+  })();
+</script>`;
+  }
+
   function buildPreviewDoc(finalHtml) {
-    const shellStyle =
-      previewMode === "mobile"
-        ? "max-width:420px;margin:0 auto;"
-        : "width:100%;margin:0 auto;";
+    const isDark = previewMode === "dark";
+    const isMobile = previewMode === "mobile";
+
+    let previewHead = "";
+    let previewContent = finalHtml;
+
+    if (outputMode === "full") {
+      if (!isDark) {
+        return finalHtml;
+      }
+
+      const headMatch = finalHtml.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
+      const bodyMatch = finalHtml.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+      previewHead = headMatch ? headMatch[1].trim() : "";
+      previewContent = bodyMatch ? bodyMatch[1].trim() : finalHtml;
+    } else {
+      const { htmlWithoutStyles, styleBlocks } = extractStyleBlocks(finalHtml);
+      previewHead = styleBlocks.join("\n");
+      previewContent = htmlWithoutStyles;
+    }
+
+    const gmailDarkScript = isDark ? buildGmailDarkModeScript() : "";
+    const shellStyle = isMobile ? "max-width:420px;margin:0 auto;" : "width:100%;margin:0 auto;";
 
     return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+${previewHead}
 <style>
   html,body{
     margin:0;
     padding:0;
-    background:#eef2f7;
+    background:${isDark ? "#0b1220" : "#eef2f7"};
   }
   body{
     font-family:Arial,Helvetica,sans-serif;
@@ -186,18 +492,14 @@ ${brand.header}${client}${brand.footer}
   }
   .shell{
     ${shellStyle}
-    border:1px solid #dfe5f0;
-    border-radius:16px;
-    overflow:auto;
-    background:#fff;
-    box-shadow:0 10px 24px rgba(15,23,40,.08);
   }
 </style>
+${gmailDarkScript}
 </head>
 <body>
   <div class="stage">
     <div class="shell">
-      ${finalHtml}
+      ${previewContent}
     </div>
   </div>
 </body>
@@ -206,6 +508,7 @@ ${brand.header}${client}${brand.footer}
 
   function runQA(finalHtml, rawClient) {
     const issues = [];
+    const finalBytes = new TextEncoder().encode(finalHtml || "").length;
 
     const imgTags = finalHtml.match(/<img\b[^>]*>/gi) || [];
     let missingAlt = 0;
@@ -248,6 +551,48 @@ ${brand.header}${client}${brand.footer}
       });
     }
 
+    const videos = rawClient.match(/<video\b/gi) || [];
+    if (videos.length) {
+      issues.push({
+        level: "warn",
+        title: "Video markup detected",
+        text: "Embedded video is unsupported in many email clients, especially Outlook."
+      });
+    }
+
+    const outlookChecks = [
+      { pattern: /display\s*:\s*flex/gi, label: "display:flex" },
+      { pattern: /display\s*:\s*grid/gi, label: "display:grid" },
+      { pattern: /position\s*:\s*fixed/gi, label: "position:fixed" },
+      { pattern: /position\s*:\s*sticky/gi, label: "position:sticky" }
+    ];
+
+    const outlookUnsafe = outlookChecks
+      .filter(check => check.pattern.test(finalHtml))
+      .map(check => check.label);
+
+    if (outlookUnsafe.length) {
+      issues.push({
+        level: "warn",
+        title: "Potential Outlook compatibility issues",
+        text: `Found ${outlookUnsafe.join(", ")}. Desktop Outlook may ignore or break these styles.`
+      });
+    }
+
+    if (finalBytes >= 102 * 1024) {
+      issues.push({
+        level: "warn",
+        title: "Email is very large",
+        text: `This email is about ${Math.round(finalBytes / 1024)} KB. Gmail may clip messages once they get close to 102 KB.`
+      });
+    } else if (finalBytes >= 90 * 1024) {
+      issues.push({
+        level: "warn",
+        title: "Email size is getting high",
+        text: `This email is about ${Math.round(finalBytes / 1024)} KB. It may be worth trimming before send.`
+      });
+    }
+
     if (!issues.length) {
       issues.push({
         level: "ok",
@@ -261,7 +606,7 @@ ${brand.header}${client}${brand.footer}
 
   function renderQA(issues) {
     const warnCount = issues.filter(i => i.level === "warn").length;
-    qaCount.textContent = warnCount ? `${warnCount} high` : "0 issues";
+    qaCount.textContent = warnCount ? `${warnCount} warning${warnCount === 1 ? "" : "s"}` : "0 issues";
     qaCount.className = `qa-pill ${warnCount ? "high" : "ok"}`;
 
     qaReport.innerHTML = issues.map(item => `
@@ -302,6 +647,8 @@ ${brand.header}${client}${brand.footer}
 
   function setViewMode(mode) {
     previewMode = mode;
+    previewFrame.classList.toggle("is-mobile", mode === "mobile");
+    previewFrame.classList.toggle("is-dark", mode === "dark");
 
     document.querySelectorAll(".mode-btn").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.previewMode === mode);
@@ -325,6 +672,7 @@ ${brand.header}${client}${brand.footer}
 
     appEl.classList.toggle("is-fragment", mode === "fragment");
     updateActionButtons();
+    updateTemplateOptionsVisibility();
     updatePreview();
   }
 
@@ -402,9 +750,9 @@ ${brand.header}${client}${brand.footer}
 
     try {
       await navigator.clipboard.writeText(outputStore.html);
-      copyBtn.textContent = "Copied!";
+      if (copyBtnLabel) copyBtnLabel.textContent = "Copied!";
       setTimeout(() => {
-        copyBtn.textContent = "Copy HTML";
+        if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
       }, 900);
     } catch (err) {
       console.error(err);
@@ -431,6 +779,8 @@ ${brand.header}${client}${brand.footer}
     brandSelect.value = "";
     outputStore.html = "";
     codeOutputInner.value = "";
+    if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
+    templateOptionsOpen = false;
 
     previewFrame.srcdoc = `
       <html>
@@ -451,11 +801,20 @@ ${brand.header}${client}${brand.footer}
     ]);
 
     updateActionButtons();
+    updateTemplateOptionsVisibility();
+  }
+
+  function clearInputOnly() {
+    inputHtml.value = "";
+    outputStore.html = "";
+    codeOutputInner.value = "";
+    updatePreview();
+    inputHtml.focus();
   }
 
   function loadFile(file) {
     if (!file) return;
-    if (!(file.name.endsWith(".html") || file.type === "text/html" || file.type === "text/plain")) return;
+    if (!(/\.html?$/i.test(file.name) || file.type === "text/html" || file.type === "text/plain")) return;
 
     const reader = new FileReader();
     reader.onload = event => {
@@ -467,15 +826,57 @@ ${brand.header}${client}${brand.footer}
 
   copyBtn.addEventListener("click", copyOutput);
   downloadBtn.addEventListener("click", downloadOutput);
-  clearBtn.addEventListener("click", clearAll);
-
   inputHtml.addEventListener("input", updatePreview);
-  brandSelect.addEventListener("change", updatePreview);
+  brandSelect.addEventListener("change", () => {
+    updateTemplateOptionsVisibility();
+    updatePreview();
+  });
 
-  ["toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveUnsubs"].forEach(id => {
+  ["toggleKeepStyles", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveScripts"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener("change", updatePreview);
   });
+
+  if (clearInputBtn) {
+    clearInputBtn.addEventListener("click", clearInputOnly);
+  }
+
+  if (toggleTemplateOptionsBtn) {
+    toggleTemplateOptionsBtn.addEventListener("click", () => {
+      templateOptionsOpen = !templateOptionsOpen;
+      updateTemplateOptionsVisibility();
+    });
+  }
+
+  if (resetTemplateOptionsBtn) {
+    resetTemplateOptionsBtn.addEventListener("click", resetTemplateOptions);
+  }
+
+  [headerBgColor, footerBgColor, toggleShowDividers].forEach(el => {
+    if (el) {
+      el.addEventListener("input", () => {
+        updateColorLabels();
+        updatePreview();
+      });
+      el.addEventListener("change", () => {
+        updateColorLabels();
+        updatePreview();
+      });
+    }
+  });
+
+  if (toggleMatchFooterColor) {
+    toggleMatchFooterColor.addEventListener("change", () => {
+      syncFooterColorState();
+      updatePreview();
+    });
+  }
+
+  if (headerBgColor) {
+    headerBgColor.addEventListener("input", () => {
+      syncFooterColorState();
+    });
+  }
 
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -511,7 +912,10 @@ ${brand.header}${client}${brand.footer}
     loadFile(file);
   });
 
+  populateBrandOptions();
   clearAll();
+  updateColorLabels();
+  syncFooterColorState();
   setOutputMode("fragment");
   setViewMode("desktop");
 });

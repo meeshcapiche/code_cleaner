@@ -20,16 +20,37 @@
     </div>
 
     <div class="topbar-actions">
-      <button id="clearBtn" class="btn ghost" type="button">Clear</button>
-      <button id="copyBtn" class="btn ghost" type="button">Copy HTML</button>
-      <button id="downloadBtn" class="btn primary" type="button">Download</button>
+      <button id="copyBtn" class="btn ghost" type="button">
+        <span class="btn-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect x="7" y="3" width="9" height="11" rx="2"></rect>
+            <path d="M5 7H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-1"></path>
+          </svg>
+        </span>
+        <span class="btn-label">Copy HTML</span>
+      </button>
+      <button id="downloadBtn" class="btn primary" type="button">
+        <span class="btn-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 3v8"></path>
+            <path d="M6.5 8.5 10 12l3.5-3.5"></path>
+            <path d="M4 15.5h12"></path>
+          </svg>
+        </span>
+        <span class="btn-label">Download</span>
+      </button>
     </div>
   </header>
 
   <main class="workspace">
     <aside class="sidebar">
 <section class="sidebar-section">
-  <h2>Client Email HTML</h2>
+  <div class="section-head section-head-actions">
+    <h2>Client Email HTML</h2>
+    <button id="clearInputBtn" class="btn btn-subtle btn-small" type="button">
+      <span class="btn-label">Clear code</span>
+    </button>
+  </div>
   <p>Paste the raw HTML from your advertising client below or drag in an .html file.</p>
 
   <div class="dropwrap" id="dropWrap">
@@ -39,7 +60,16 @@
       spellcheck="false"
       placeholder="Paste client email HTML here or drop an .html file…"
     ></textarea>
-    <div class="dropnote" id="dropNote">Drop HTML file here</div>
+    <div class="dropnote" id="dropNote">
+      <span class="dropnote-icon" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M10 3v8"></path>
+          <path d="M6.5 7 10 3.5 13.5 7"></path>
+          <path d="M4 12.5v1A2.5 2.5 0 0 0 6.5 16h7A2.5 2.5 0 0 0 16 13.5v-1"></path>
+        </svg>
+      </span>
+      <span>Drop HTML file here</span>
+    </div>
   </div>
 </section>
 
@@ -58,14 +88,92 @@
   <p>Pick the brand whose header and footer will wrap the client email.</p>
   <select id="brandSelect" class="select">
     <option value="">Choose a brand…</option>
-    <option value="thinkadvisor">ThinkAdvisor</option>
   </select>
+
+  <button id="toggleTemplateOptionsBtn" class="btn btn-subtle btn-small template-toggle" type="button" hidden aria-expanded="false">
+    <span class="btn-icon" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="m3.5 14.5 7.75-7.75a2.12 2.12 0 1 1 3 3L6.5 17.5H3.5z"></path>
+        <path d="m10.5 4.5 5 5"></path>
+      </svg>
+    </span>
+    <span class="btn-label">Edit template options</span>
+  </button>
+
+  <div id="templateControls" class="template-controls" hidden>
+    <div class="section-head section-head-actions template-head">
+      <p class="helper-note template-note">Optional: adjust the template background colors or hide the divider lines. These settings only affect full email mode.</p>
+      <button id="resetTemplateOptionsBtn" class="btn btn-subtle btn-small" type="button">
+        <span class="btn-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6"></path>
+            <path d="M13 2.5h3.5V6"></path>
+          </svg>
+        </span>
+        <span class="btn-label">Reset</span>
+      </button>
+    </div>
+
+    <div class="color-grid">
+      <label class="field-card" for="headerBgColor">
+        <span class="field-label">Header background</span>
+        <span class="color-field">
+          <input id="headerBgColor" class="color-input" type="color" value="#ffffff">
+          <span id="headerBgValue" class="color-value">#FFFFFF</span>
+        </span>
+      </label>
+
+      <label class="field-card" for="footerBgColor">
+        <span class="field-label">Footer background</span>
+        <span class="color-field">
+          <input id="footerBgColor" class="color-input" type="color" value="#ffffff">
+          <span id="footerBgValue" class="color-value">#FFFFFF</span>
+        </span>
+      </label>
+    </div>
+
+    <label class="toggle-card toggle-card-compact">
+      <input id="toggleMatchFooterColor" type="checkbox">
+      <span class="toggle-ui"></span>
+      <span class="toggle-copy">
+        <strong>Match Footer to Header</strong>
+        <small>Uses the same background color for both areas so the template feels unified.</small>
+      </span>
+    </label>
+
+    <label class="toggle-card toggle-card-compact">
+      <input id="toggleShowDividers" type="checkbox" checked>
+      <span class="toggle-ui"></span>
+      <span class="toggle-copy">
+        <strong>Show Divider Lines</strong>
+        <small>Keeps the thin lines above or below the brand header and footer.</small>
+      </span>
+    </label>
+  </div>
 </section>
 
       <section class="sidebar-section">
-        <h2>Processing Options</h2>
+        <div class="section-title">
+          <span class="section-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="m9.5 2.5 1.2 3.4 3.3 1.2-3.3 1.2-1.2 3.4-1.2-3.4-3.3-1.2 3.3-1.2z"></path>
+              <path d="m14.5 10.5.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"></path>
+            </svg>
+          </span>
+          <h2>Processing Options</h2>
+        </div>
+        <p class="helper-note">For most cleanups, leave all of these on. Turn one off only if the original email loses styling or content you want to keep.</p>
 
         
+
+<label class="toggle-card">
+  <input id="toggleKeepStyles" type="checkbox" checked>
+  <span class="toggle-ui"></span>
+  <span class="toggle-copy">
+    <strong>Keep Style Blocks</strong>
+    <small>Preserves embedded style tags and email-safe head CSS for Stripo-like or responsive source HTML.</small>
+  </span>
+</label>
 
 <label class="toggle-card">
   <input id="toggleRemovePreview" type="checkbox" checked>
@@ -86,11 +194,11 @@
 </label>
 
 <label class="toggle-card">
-  <input id="toggleRemoveUnsubs" type="checkbox" checked>
+  <input id="toggleRemoveScripts" type="checkbox" checked>
   <span class="toggle-ui"></span>
   <span class="toggle-copy">
-    <strong>Remove Unsubscribe Links</strong>
-    <small>Strips the client’s unsubscribe links because Omeda handles compliance.</small>
+    <strong>Remove Web Scripts</strong>
+    <small>Removes website-only code like JavaScript. Emails do not use this, so it is usually safest to leave on.</small>
   </span>
 </label>
       </section>
@@ -112,9 +220,43 @@
     <section class="mainpanel">
   <div class="preview-toolbar">
     <div class="preview-modes">
-      <button class="mode-btn active" data-preview-mode="desktop" type="button">Desktop</button>
-      <button class="mode-btn" data-preview-mode="mobile" type="button">Mobile</button>
-      <button class="mode-btn" data-preview-mode="code" type="button">Code</button>
+      <button class="mode-btn active" data-preview-mode="desktop" type="button">
+        <span class="mode-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect x="3" y="4" width="14" height="9" rx="1.5"></rect>
+            <path d="M8 16h4"></path>
+            <path d="M10 13v3"></path>
+          </svg>
+        </span>
+        <span>Desktop</span>
+      </button>
+      <button class="mode-btn" data-preview-mode="mobile" type="button">
+        <span class="mode-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect x="6.5" y="2.5" width="7" height="15" rx="1.5"></rect>
+            <path d="M9 15h2"></path>
+          </svg>
+        </span>
+        <span>Mobile</span>
+      </button>
+      <button class="mode-btn" data-preview-mode="code" type="button">
+        <span class="mode-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M7 6 3.5 10 7 14"></path>
+            <path d="m13 6 3.5 4-3.5 4"></path>
+            <path d="m11.5 4-3 12"></path>
+          </svg>
+        </span>
+        <span>Code</span>
+      </button>
+      <button class="mode-btn" data-preview-mode="dark" type="button">
+        <span class="mode-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M14.5 12.5A5.5 5.5 0 0 1 7.5 5.5a6 6 0 1 0 7 7z"></path>
+          </svg>
+        </span>
+        <span>Dark</span>
+      </button>
     </div>
   </div>
 
