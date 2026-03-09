@@ -152,7 +152,7 @@ textarea{
 .inputbox{
   width:100%;
   height:150px;
-  border:1px solid var(--line);
+  border:2px dashed var(--line);
   border-radius:14px;
   background:#fff;
   padding:14px;
