@@ -17,24 +17,26 @@ export const universitybusiness = createBrand({
     <td align="center" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
         <tr>
-          <td style="padding:14px 20px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td width="250" valign="middle" style="padding:0 16px 0 0;text-align:left;">
-                  <a href="https://universitybusiness.com/" target="_blank" style="text-decoration:none;">
-                    <img
-                      src="https://cdn.omeda.com/hosted/images/CLIENT_LRP/LRPCD/ub_white_stoke_for_email.png"
-                      alt="University Business"
-                      width="220"
-                      style="display:block;width:100%;max-width:220px;height:auto;border:0;"
-                    >
-                  </a>
-                </td>
-                <td valign="middle" style="padding:0;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#555555;text-align:left;">
-                  You are receiving this email as part of a free information service from <i>University Business</i>.
-                </td>
-              </tr>
-            </table>
+          <td style="padding:12px 16px 8px 16px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:13px;line-height:1.4;color:#6f6f6f;text-align:center;">
+            To view this email as a web page, click
+            <a href="@{mv_online_version}@" target="_blank" style="color:#0068A5;text-decoration:underline;">here</a>.
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:16px 20px 14px 20px;">
+            <a href="https://universitybusiness.com/" target="_blank" style="text-decoration:none;">
+              <img
+                src="https://cdn.omeda.com/hosted/images/CLIENT_LRP/LRPCD/ub_white_stoke_for_email.png"
+                alt="University Business"
+                width="220"
+                style="display:block;width:100%;max-width:220px;height:auto;border:0;margin:0 auto;"
+              >
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 24px 16px 24px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#7a7a7a;text-align:center;">
+            You are receiving this email as part of a free information service from <i>University Business</i>.
           </td>
         </tr>
       </table>
