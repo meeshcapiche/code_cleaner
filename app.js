@@ -49,6 +49,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const stealthLinkInput = document.getElementById("stealthLinkInput");
   const stealthHelperText = document.getElementById("stealthHelperText");
   const copyBtn = document.getElementById("copyBtn");
+  const resetAllBtn = document.getElementById("resetAllBtn");
   const downloadBtn = document.getElementById("downloadBtn");
   const copyBtnLabel = copyBtn.querySelector(".btn-label");
   const previewPane = document.getElementById("previewPane");
@@ -548,17 +549,32 @@ window.addEventListener("DOMContentLoaded", () => {
     const source = String(bodyHtml || "").trim();
     if (!source) return { bodyHtml: "", takeawaysHtml: "" };
 
-    const labeledListMatch = source.match(
-      /(<p\b[^>]*>[\s\S]*?(?:Key Takeaways|What You['’]ll Learn|What you['’]ll learn|In this webinar|In this session)[\s\S]*?<\/p>\s*)((?:<ul\b[\s\S]*?<\/ul>)|(?:<ol\b[\s\S]*?<\/ol>))/i
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = source;
+    const children = Array.from(wrapper.childNodes).filter(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return Boolean(node.textContent?.trim());
+      }
+      return true;
+    });
+
+    const splitIndex = children.findIndex(node =>
+      /key takeaways/i.test((node.textContent || "").replace(/\s+/g, " ").trim())
     );
-    if (labeledListMatch) {
-      const fullMatch = labeledListMatch[0];
-      const introHtml = labeledListMatch[1];
-      const listHtml = labeledListMatch[2];
-      return {
-        bodyHtml: source.replace(fullMatch, "").trim(),
-        takeawaysHtml: `${introHtml}${listHtml}`.trim()
-      };
+
+    if (splitIndex !== -1) {
+      const bodyHtml = children
+        .slice(0, splitIndex)
+        .map(node => node.nodeType === Node.TEXT_NODE ? node.textContent : node.outerHTML)
+        .join("")
+        .trim();
+      const takeawaysHtml = children
+        .slice(splitIndex)
+        .map(node => node.nodeType === Node.TEXT_NODE ? node.textContent : node.outerHTML)
+        .join("")
+        .trim();
+
+      return { bodyHtml, takeawaysHtml };
     }
 
     const firstListMatch = source.match(/(<ul\b[\s\S]*?<\/ul>|<ol\b[\s\S]*?<\/ol>)/i);
@@ -882,8 +898,10 @@ ${brandFooter}
       ctaLabel
     } = getWebcastFields();
     const sections = extractTakeawaySection(bodyHtml);
-    const mainBodyHtml = sections.bodyHtml || bodyHtml || "<p>Webcast description goes here.</p>";
     const takeawaysHtml = sections.takeawaysHtml;
+    const mainBodyHtml = takeawaysHtml
+      ? (sections.bodyHtml || "")
+      : (sections.bodyHtml || bodyHtml || "<p>Webcast description goes here.</p>");
     const fontStack = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
     const buttonColor = theme.buttonAccent || theme.accent;
 
@@ -1771,6 +1789,21 @@ ${gmailDarkScript}
     inputHtml.focus();
   }
 
+  function resetAllState() {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch (err) {
+      console.error(err);
+    }
+
+    resetTemplateOptions();
+    clearAll();
+    setBuilderMode("cleaner");
+    setOutputMode("fragment");
+    setViewMode("desktop");
+    saveState();
+  }
+
   function loadFile(file) {
     if (!file) return;
     if (!(/\.html?$/i.test(file.name) || file.type === "text/html" || file.type === "text/plain")) return;
@@ -1784,6 +1817,7 @@ ${gmailDarkScript}
   }
 
   copyBtn.addEventListener("click", copyOutput);
+  resetAllBtn?.addEventListener("click", resetAllState);
   downloadBtn.addEventListener("click", downloadOutput);
   inputHtml.addEventListener("input", () => {
     updatePreview();
