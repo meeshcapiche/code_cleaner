@@ -33,6 +33,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const qaCount = document.getElementById("qaCount");
   const statusPill = document.getElementById("statusPill");
   const statusMessage = document.getElementById("statusMessage");
+  const builderModeSwitch = document.getElementById("builderModeSwitch");
   const brandSelect = document.getElementById("brandSelect");
   const brandHelperText = document.getElementById("brandHelperText");
   const toggleTemplateOptionsBtn = document.getElementById("toggleTemplateOptionsBtn");
@@ -53,12 +54,31 @@ window.addEventListener("DOMContentLoaded", () => {
   const previewPane = document.getElementById("previewPane");
   const codePane = document.getElementById("codePane");
   const codeOutputInner = document.getElementById("codeOutputInner");
+  const outputModeSwitch = document.getElementById("outputModeSwitch");
   const dropWrap = document.getElementById("dropWrap");
   const clearInputBtn = document.getElementById("clearInputBtn");
+  const fetchWebcastBtn = document.getElementById("fetchWebcastBtn");
+  const webcastUrlInput = document.getElementById("webcastUrlInput");
+  const webcastJsonInput = document.getElementById("webcastJsonInput");
+  const webcastEventType = document.getElementById("webcastEventType");
+  const webcastHeadline = document.getElementById("webcastHeadline");
+  const webcastDate = document.getElementById("webcastDate");
+  const webcastTime = document.getElementById("webcastTime");
+  const webcastDuration = document.getElementById("webcastDuration");
+  const webcastBody = document.getElementById("webcastBody");
+  const webcastSponsorLogo = document.getElementById("webcastSponsorLogo");
+  const webcastSpeakerImage = document.getElementById("webcastSpeakerImage");
+  const webcastSpeakerName = document.getElementById("webcastSpeakerName");
+  const webcastSpeakerRole = document.getElementById("webcastSpeakerRole");
+  const webcastCtaUrl = document.getElementById("webcastCtaUrl");
+  const webcastCtaLabel = document.getElementById("webcastCtaLabel");
 
   const outputStore = { html: "" };
+  let builderMode = "cleaner";
   let previewMode = "desktop";
   let outputMode = "fragment";
+  let lastCleanerOutputMode = "fragment";
+  let lastCleanerShowDividers = true;
   let templateOptionsOpen = false;
   const defaultTemplateOptions = {
     headerBg: "#ffffff",
@@ -109,7 +129,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (headerBgColor) headerBgColor.value = defaultTemplateOptions.headerBg;
     if (footerBgColor) footerBgColor.value = defaultTemplateOptions.footerBg;
     if (toggleMatchFooterColor) toggleMatchFooterColor.checked = defaultTemplateOptions.matchFooterColor;
-    if (toggleShowDividers) toggleShowDividers.checked = defaultTemplateOptions.showDividers;
+    if (toggleShowDividers) toggleShowDividers.checked = builderMode === "webcast" ? false : defaultTemplateOptions.showDividers;
     syncFooterColorState();
     updatePreview();
   }
@@ -231,7 +251,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildTrackingMarkup() {
-    const adId = (adIdInput?.value || "").trim();
+    const adId = builderMode === "webcast" ? "" : (adIdInput?.value || "").trim();
     const stealthLink = getEffectiveStealthLink();
     const blocks = [];
 
@@ -247,7 +267,222 @@ window.addEventListener("DOMContentLoaded", () => {
     return blocks.join("\n");
   }
 
+  function normalizeOn24Url(url) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith("/")) return `https://event.on24.com${url}`;
+    return url;
+  }
+
+  function normalizeOn24HtmlAssets(html) {
+    return String(html || "").replace(
+      /\b(src|href)=["'](\/[^"']*)["']/gi,
+      (_, attr, value) => `${attr}="${normalizeOn24Url(value)}"`
+    );
+  }
+
+  function extractOn24Identifiers(url) {
+    const match = (url || "").match(/\/wcc\/r\/(\d+)\/([A-Z0-9]+)/i);
+    return match ? { eventId: match[1], key: match[2] } : null;
+  }
+
+  function formatDurationLabel(minutesValue) {
+    const minutes = Number(minutesValue || 0);
+    if (!minutes) return "";
+    if (minutes % 60 === 0) {
+      const hours = minutes / 60;
+      return `${hours} hour${hours === 1 ? "" : "s"}`;
+    }
+    return `${minutes} minutes`;
+  }
+
+  function extractFirstImageFromHtml(html) {
+    const match = (html || "").match(/<img\b[^>]*src=["']([^"']+)["']/i);
+    return match ? normalizeOn24Url(match[1]) : "";
+  }
+
+  function parseOn24EventPayload(payload) {
+    const event = payload?.event;
+    const session = event?.session || {};
+    const speaker = Array.isArray(session.speakers) ? session.speakers[0] || {} : {};
+    const durationValue = event?.extendedeventinfo?.eventinfo?.sessionLengthMinutes?.value || "";
+    const speakerRoleParts = [speaker.title, speaker.company].filter(Boolean);
+    const normalizedBodyHtml = normalizeOn24HtmlAssets(session.eventAbstract || "");
+
+    return {
+      eventType: event?.custom2 || "Webinar",
+      headline: event?.description || "",
+      date: event?.localizedeventdate || "",
+      time: event?.localizedeventtime || "",
+      duration: formatDurationLabel(durationValue),
+      bodyHtml: normalizedBodyHtml,
+      sponsorLogo: extractFirstImageFromHtml(normalizedBodyHtml),
+      speakerImage: normalizeOn24Url(speaker.photo || ""),
+      speakerName: speaker.name || "",
+      speakerRole: speakerRoleParts.join(", "),
+      ctaUrl: webcastUrlInput?.value.trim() || event?.registrationurl || ""
+    };
+  }
+
+  function populateWebcastFields(data = {}) {
+    if (webcastEventType) webcastEventType.value = data.eventType || webcastEventType.value || "Webinar";
+    if (webcastHeadline) webcastHeadline.value = data.headline || "";
+    if (webcastDate) webcastDate.value = data.date || "";
+    if (webcastTime) webcastTime.value = data.time || "";
+    if (webcastDuration) webcastDuration.value = data.duration || "";
+    if (webcastBody) webcastBody.value = data.bodyHtml || "";
+    if (webcastSponsorLogo) webcastSponsorLogo.value = data.sponsorLogo || "";
+    if (webcastSpeakerImage) webcastSpeakerImage.value = data.speakerImage || "";
+    if (webcastSpeakerName) webcastSpeakerName.value = data.speakerName || "";
+    if (webcastSpeakerRole) webcastSpeakerRole.value = data.speakerRole || "";
+    if (webcastCtaUrl) webcastCtaUrl.value = data.ctaUrl || webcastUrlInput?.value.trim() || "";
+    if (webcastCtaLabel && !webcastCtaLabel.value) webcastCtaLabel.value = "Register now";
+  }
+
+  function getWebcastFields() {
+    return {
+      eventType: webcastEventType?.value.trim() || "Webinar",
+      headline: webcastHeadline?.value.trim() || "",
+      date: webcastDate?.value.trim() || "",
+      time: webcastTime?.value.trim() || "",
+      duration: webcastDuration?.value.trim() || "",
+      bodyHtml: webcastBody?.value.trim() || "",
+      sponsorLogo: webcastSponsorLogo?.value.trim() || "",
+      speakerImage: webcastSpeakerImage?.value.trim() || "",
+      speakerName: webcastSpeakerName?.value.trim() || "",
+      speakerRole: webcastSpeakerRole?.value.trim() || "",
+      ctaUrl: webcastCtaUrl?.value.trim() || "",
+      ctaLabel: webcastCtaLabel?.value.trim() || "Register now"
+    };
+  }
+
+  function getWebcastTheme(brandKey) {
+    if (brandKey === "hrexecutive") {
+      return {
+        accent: "#8b2436",
+        accentDark: "#6f1c2b",
+        labelBackground: "#fdf0f2",
+        labelText: "#8b2436",
+        metaBackground: "#f7f7f8",
+        metaText: "#374151",
+        takeawayBackground: "#f7eaed",
+        takeawayBorder: "#ebc6cf",
+        takeawayText: "#6e2030",
+        cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(139,36,54,0.06)"
+      };
+    }
+
+    if (brandKey === "districtadministration") {
+      return {
+        accent: "#1f4f8c",
+        accentDark: "#16385f",
+        labelBackground: "#edf4fb",
+        labelText: "#1f4f8c",
+        metaBackground: "#f7f8fb",
+        metaText: "#374151",
+        takeawayBackground: "#eef4fb",
+        takeawayBorder: "#d4e2f5",
+        takeawayText: "#123f73",
+        cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(31,79,140,0.05)"
+      };
+    }
+
+    if (brandKey === "universitybusiness") {
+      return {
+        accent: "#234a86",
+        accentDark: "#17325b",
+        labelBackground: "#edf4fb",
+        labelText: "#234a86",
+        metaBackground: "#f7f8fb",
+        metaText: "#374151",
+        takeawayBackground: "#eef4fb",
+        takeawayBorder: "#d4e2f5",
+        takeawayText: "#123f73",
+        cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(35,74,134,0.05)"
+      };
+    }
+
+    return {
+      accent: "#5b53c9",
+      accentDark: "#4b44af",
+      labelBackground: "#f3f1ff",
+      labelText: "#5b53c9",
+      metaBackground: "#f7f7fb",
+      metaText: "#374151",
+      takeawayBackground: "#eef4fb",
+      takeawayBorder: "#d4e2f5",
+      takeawayText: "#123f73",
+      cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(91,83,201,0.05)"
+    };
+  }
+
+  function extractTakeawaySection(bodyHtml) {
+    const source = String(bodyHtml || "").trim();
+    if (!source) return { bodyHtml: "", takeawaysHtml: "" };
+
+    const labeledListMatch = source.match(
+      /(<p\b[^>]*>[\s\S]*?(?:Key Takeaways|What You['’]ll Learn|What you['’]ll learn|In this webinar|In this session)[\s\S]*?<\/p>\s*)((?:<ul\b[\s\S]*?<\/ul>)|(?:<ol\b[\s\S]*?<\/ol>))/i
+    );
+    if (labeledListMatch) {
+      const fullMatch = labeledListMatch[0];
+      const introHtml = labeledListMatch[1];
+      const listHtml = labeledListMatch[2];
+      return {
+        bodyHtml: source.replace(fullMatch, "").trim(),
+        takeawaysHtml: `${introHtml}${listHtml}`.trim()
+      };
+    }
+
+    const firstListMatch = source.match(/(<ul\b[\s\S]*?<\/ul>|<ol\b[\s\S]*?<\/ol>)/i);
+    if (!firstListMatch) {
+      return { bodyHtml: source, takeawaysHtml: "" };
+    }
+
+    return {
+      bodyHtml: source.replace(firstListMatch[0], "").trim(),
+      takeawaysHtml: firstListMatch[0].trim()
+    };
+  }
+
+  async function fetchWebcastData() {
+    let payloadText = webcastJsonInput?.value.trim() || "";
+    const url = webcastUrlInput?.value.trim() || "";
+
+    if (!payloadText && url) {
+      const identifiers = extractOn24Identifiers(url);
+      if (!identifiers) {
+        throw new Error("That ON24 URL format was not recognized.");
+      }
+
+      const endpoint = `https://event.on24.com/apic/eventRegistration/EventServlet?sessionid=1&key=${identifiers.key}&eventid=${identifiers.eventId}&cb=${Date.now()}`;
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error(`Fetch failed with status ${response.status}.`);
+      }
+      payloadText = await response.text();
+      if (webcastJsonInput) webcastJsonInput.value = payloadText;
+    }
+
+    if (!payloadText) {
+      throw new Error("Paste an ON24 URL or EventServlet JSON first.");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(payloadText);
+    } catch (err) {
+      throw new Error("The EventServlet payload is not valid JSON.");
+    }
+
+    const webcastData = parseOn24EventPayload(parsed);
+    populateWebcastFields(webcastData);
+    updatePreview();
+  }
+
   function hasValidFullEmailSelection() {
+    if (builderMode === "webcast") {
+      return !!brandSelect.value;
+    }
     return outputMode !== "full" || !!brandSelect.value;
   }
 
@@ -274,7 +509,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateTemplateOptionsVisibility() {
-    const canEditTemplate = outputMode === "full" && !!brandSelect.value;
+    const canEditTemplate = (builderMode === "webcast" || outputMode === "full") && !!brandSelect.value;
 
     if (!canEditTemplate) {
       templateOptionsOpen = false;
@@ -295,9 +530,11 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     if (brandHelperText) {
-      brandHelperText.textContent = outputMode === "full"
-        ? "Required for full branded email. Pick the brand whose header and footer should wrap the client content."
-        : "Optional in code-only mode. Choose a brand only if you want to switch to full branded email.";
+      brandHelperText.textContent = builderMode === "webcast"
+        ? "Required for webcast builder. Pick the brand whose header and footer should wrap the invite."
+        : outputMode === "full"
+          ? "Required for full branded email. Pick the brand whose header and footer should wrap the client content."
+          : "Optional in code-only mode. Choose a brand only if you want to switch to full branded email.";
     }
 
     updateStealthHelper();
@@ -395,6 +632,240 @@ ${brandFooter}
 </html>`;
   }
 
+  function buildWebcastContentHtml() {
+    const brandKey = brandSelect.value;
+    const theme = getWebcastTheme(brandKey);
+    const {
+      eventType,
+      headline,
+      date,
+      time,
+      duration,
+      bodyHtml,
+      sponsorLogo,
+      speakerImage,
+      speakerName,
+      speakerRole,
+      ctaUrl,
+      ctaLabel
+    } = getWebcastFields();
+    const sections = extractTakeawaySection(bodyHtml);
+    const mainBodyHtml = sections.bodyHtml || bodyHtml || "<p>Webcast description goes here.</p>";
+    const takeawaysHtml = sections.takeawaysHtml;
+    const fontStack = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
+
+    const normalizedTime = time
+      ? time
+          .replace(/\bEastern Daylight Time\b/i, "ET")
+          .replace(/\bEastern Standard Time\b/i, "ET")
+          .replace(/\bEastern Time\b/i, "ET")
+      : "";
+    const timeLine = [normalizedTime, duration].filter(Boolean).join(", ");
+    const metaRows = [];
+    if (date) metaRows.push({ icon: "&#128197;", text: date });
+    if (timeLine) metaRows.push({ icon: "&#128340;", text: timeLine });
+
+    const hasSponsorInBody = /This event is sponsored by/i.test(bodyHtml);
+    const sponsorMarkup = sponsorLogo && !hasSponsorInBody ? `
+      <tr>
+        <td style="padding:0 40px 28px 40px;font-family:${fontStack};font-size:14px;line-height:1.5;color:#4b5563;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb;border-radius:12px;">
+            <tr>
+              <td style="padding:22px 24px;">
+                <div style="margin:0 0 12px 0;font-size:12px;line-height:1.2;font-weight:700;color:#111827;">This event is sponsored by</div>
+                <img src="${sponsorLogo.replace(/"/g, "&quot;")}" alt="Sponsor logo" style="display:block;max-width:220px;width:100%;height:auto;border:0;">
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>` : "";
+
+    const topCtaMarkup = ctaUrl ? `
+      <tr>
+        <td style="padding:28px 40px 0;text-align:center;">
+          <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:${theme.accent};color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 48px;border-radius:10px;text-decoration:none;box-shadow:0 2px 8px rgba(17,24,39,0.12);">
+            ${ctaLabel}
+          </a>
+        </td>
+      </tr>` : "";
+
+    const takeawaysMarkup = takeawaysHtml ? `
+      <tr>
+        <td style="padding:24px 40px 0 40px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${theme.takeawayBackground};border:1px solid ${theme.takeawayBorder};border-radius:12px;">
+            <tr>
+              <td style="padding:22px 24px;font-family:${fontStack};font-size:15px;line-height:1.65;color:${theme.takeawayText};">
+                <div style="margin:0 0 12px 0;font-size:11px;line-height:1.2;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${theme.accent};">Key Takeaways</div>
+                ${takeawaysHtml}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>` : "";
+
+    const speakerMarkup = speakerName || speakerImage ? `
+      <tr>
+        <td style="padding:32px 40px 0 40px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #f0f0f0;border-radius:12px;background:#ffffff;">
+            <tr>
+              ${speakerImage ? `<td class="webcast-speaker-image-wrap" width="136" style="padding:24px 0 24px 24px;vertical-align:middle;">
+                <img class="webcast-speaker-image" src="${speakerImage.replace(/"/g, "&quot;")}" alt="${(speakerName || "Speaker").replace(/"/g, "&quot;")}" style="display:block;width:96px;max-width:96px;height:96px;border-radius:14px;border:0;object-fit:cover;">
+              </td>` : ""}
+              <td style="padding:24px;vertical-align:middle;font-family:${fontStack};color:#1f2937;">
+                <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#9ca3af;">Featured Speaker</p>
+                <p style="margin:4px 0 0;font-size:17px;font-weight:700;color:#111827;">${speakerName || ""}</p>
+                <p style="margin:2px 0 0;font-size:13px;color:#6b7280;">${speakerRole || ""}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>` : "";
+
+    const bottomCtaMarkup = ctaUrl ? `
+      <tr>
+        <td style="padding:32px 40px 24px 40px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb;border-radius:12px;">
+            <tr>
+              <td style="padding:28px 32px;text-align:center;">
+                <p style="margin:0 0 16px 0;font-family:${fontStack};font-size:16px;line-height:1.5;color:#374151;font-weight:600;">Seats are limited. Save yours now.</p>
+                <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:#111827;color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 44px;border-radius:10px;text-decoration:none;">
+                  ${ctaLabel}
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>` : "";
+
+    const metaMarkup = metaRows.length ? `
+      <tr>
+        <td style="padding:20px 40px 0;text-align:center;">
+          <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
+            <tr>
+              ${metaRows.map((row, index) => `
+                <td class="webcast-meta-cell" style="padding:0 0 8px 0;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" style="background:${theme.metaBackground};border-radius:8px;">
+                    <tr>
+                      <td style="padding:8px 14px;font-family:${fontStack};font-size:13px;color:${theme.metaText};font-weight:500;white-space:nowrap;">
+                        ${row.icon} ${row.text}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                ${index < metaRows.length - 1 ? '<td style="width:8px;"></td>' : ""}`).join("")}
+            </tr>
+          </table>
+        </td>
+      </tr>` : "";
+
+    return `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background:#eef1f4;">
+  <tr>
+    <td align="center" style="padding:32px 20px;">
+      <table class="webcast-card" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:${theme.cardShadow};">
+        <tr>
+          <td style="padding:32px 40px 0;text-align:center;">
+            <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
+              <tr>
+                <td style="background:${theme.labelBackground};color:${theme.labelText};font-family:${fontStack};font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 16px;border-radius:100px;">
+                  ${eventType || "Webinar"}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="webcast-headline" style="padding:20px 40px 0;text-align:center;font-family:${fontStack};font-size:28px;line-height:1.3;color:#111827;font-weight:800;letter-spacing:-0.3px;">
+            ${headline || "Webcast title"}
+          </td>
+        </tr>
+        ${metaMarkup}
+        ${topCtaMarkup}
+        <tr>
+          <td style="padding:24px 40px 0;font-family:${fontStack};font-size:15px;line-height:1.7;color:#444444;">
+            ${mainBodyHtml}
+          </td>
+        </tr>
+        ${takeawaysMarkup}
+        ${speakerMarkup}
+        ${bottomCtaMarkup}
+        ${sponsorMarkup}
+      </table>
+    </td>
+  </tr>
+</table>`;
+  }
+
+  function buildWebcastEmailHtml() {
+    const brandKey = brandSelect.value;
+    const brand = brandPresets[brandKey];
+
+    if (!brand) {
+      return "";
+    }
+
+    const preserveLightSurfaceBrands = new Set(["thinkadvisor", "hrexecutive", "districtadministration", "universitybusiness"]);
+    const preserveDefaultSurface =
+      preserveLightSurfaceBrands.has(brand.id) &&
+      (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
+      (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
+    const brandOptions = {
+      headerBg: headerBgColor?.value || "#ffffff",
+      footerBg: (toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff",
+      showDividers: toggleShowDividers?.checked !== false,
+      headerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="header"' : "",
+      footerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="footer"' : ""
+    };
+    const brandHeader = typeof brand.renderHeader === "function" ? brand.renderHeader(brandOptions) : brand.header;
+    const brandFooter = typeof brand.renderFooter === "function" ? brand.renderFooter(brandOptions) : brand.footer;
+    const trackingMarkup = buildTrackingMarkup();
+    const webcastMarkup = buildWebcastContentHtml();
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Webcast Invite</title>
+<style>
+  @media only screen and (max-width:600px) {
+    .webcast-headline {
+      font-size: 24px !important;
+      line-height: 1.25 !important;
+    }
+    .webcast-card {
+      border-radius: 14px !important;
+    }
+    .webcast-meta-cell {
+      display: block !important;
+      width: 100% !important;
+      padding-bottom: 8px !important;
+    }
+    .webcast-speaker-image-wrap {
+      display: block !important;
+      width: 100% !important;
+      padding: 24px 24px 0 24px !important;
+    }
+    .webcast-speaker-image {
+      width: 88px !important;
+      max-width: 88px !important;
+      height: 88px !important;
+    }
+  }
+</style>
+</head>
+<body style="background:#eef1f4;margin:0;padding:0;">
+<!-- COBRAND_HEADER_START -->
+${brandHeader}
+<!-- COBRAND_HEADER_END -->
+${trackingMarkup ? `${trackingMarkup}\n` : ""}${webcastMarkup}
+<!-- COBRAND_FOOTER_START -->
+${brandFooter}
+<!-- COBRAND_FOOTER_END -->
+</body>
+</html>`;
+  }
+
   function buildFragmentHtml() {
     const { clientHtml, preservedHeadMarkup } = getProcessedClientContent();
     const trackingMarkup = buildTrackingMarkup();
@@ -403,6 +874,9 @@ ${brandFooter}
   }
 
   function getCurrentOutputHtml() {
+    if (builderMode === "webcast") {
+      return buildWebcastEmailHtml();
+    }
     return outputMode === "fragment" ? buildFragmentHtml() : buildFullEmailHtml();
   }
 
@@ -748,10 +1222,46 @@ ${gmailDarkScript}
     }
   }
 
+  function setBuilderMode(mode) {
+    builderMode = mode;
+    appEl.classList.toggle("is-webcast", mode === "webcast");
+    appEl.classList.toggle("is-cleaner", mode === "cleaner");
+    document.querySelectorAll(".webcast-only").forEach(section => {
+      section.hidden = mode !== "webcast";
+    });
+    document.querySelectorAll(".cleaner-only").forEach(section => {
+      section.hidden = mode !== "cleaner";
+    });
+
+    builderModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.builderMode === mode);
+    });
+
+    if (mode === "webcast") {
+      if (toggleShowDividers) {
+        lastCleanerShowDividers = toggleShowDividers.checked;
+        toggleShowDividers.checked = false;
+      }
+      setOutputMode("full");
+    } else {
+      if (toggleShowDividers) {
+        toggleShowDividers.checked = lastCleanerShowDividers;
+      }
+      setOutputMode(lastCleanerOutputMode || "fragment");
+    }
+
+    updateTemplateOptionsVisibility();
+    updateActionButtons();
+    updatePreview();
+  }
+
   function setOutputMode(mode) {
     outputMode = mode;
+    if (builderMode === "cleaner") {
+      lastCleanerOutputMode = mode;
+    }
 
-    document.querySelectorAll(".switch-btn").forEach(btn => {
+    outputModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.outputMode === mode);
     });
 
@@ -763,6 +1273,29 @@ ${gmailDarkScript}
 
   function updatePreview() {
     try {
+      if (builderMode === "webcast" && !brandSelect.value) {
+        outputStore.html = "";
+        updateActionButtons();
+        renderStatus("warn", "Action needed", "Choose a brand to build a webcast invite.");
+
+        if (previewMode === "code") {
+          codeOutputInner.value = "Choose a brand to generate a webcast invite.";
+        } else {
+          previewFrame.srcdoc = `
+            <html>
+              <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
+                <div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#667085;padding:40px;text-align:center;">
+                  Choose a brand to generate a webcast invite.
+                </div>
+              </body>
+            </html>
+          `;
+        }
+
+        renderQABaseline();
+        return;
+      }
+
       if (outputMode === "full" && !brandSelect.value) {
         outputStore.html = "";
         updateActionButtons();
@@ -791,7 +1324,12 @@ ${gmailDarkScript}
       outputStore.html = finalHtml;
       updateActionButtons();
 
-      if (!inputHtml.value.trim()) {
+      if (builderMode === "webcast") {
+        const hasHeadline = !!webcastHeadline?.value.trim();
+        renderStatus(hasHeadline ? "ok" : "info", hasHeadline ? "Invite ready" : "Waiting for content", hasHeadline
+          ? "Webcast invite generated. Review the preview and QA checks, then copy or download."
+          : "Paste an ON24 URL or EventServlet JSON, then fetch event details.");
+      } else if (!inputHtml.value.trim()) {
         renderStatus("info", "Using sample", outputMode === "full"
           ? "Showing a sample content block inside the selected brand template."
           : "Showing sample content so you can preview the cleanup output before pasting real HTML.");
@@ -870,6 +1408,9 @@ ${gmailDarkScript}
     brandSelect.value = "";
     if (adIdInput) adIdInput.value = "";
     if (stealthLinkInput) stealthLinkInput.value = "";
+    if (webcastUrlInput) webcastUrlInput.value = "";
+    if (webcastJsonInput) webcastJsonInput.value = "";
+    populateWebcastFields({ eventType: "Webinar" });
     outputStore.html = "";
     codeOutputInner.value = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
@@ -915,6 +1456,13 @@ ${gmailDarkScript}
   copyBtn.addEventListener("click", copyOutput);
   downloadBtn.addEventListener("click", downloadOutput);
   inputHtml.addEventListener("input", updatePreview);
+  builderModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
+    btn.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      setBuilderMode(btn.dataset.builderMode);
+    });
+  });
   brandSelect.addEventListener("change", () => {
     updateTemplateOptionsVisibility();
     updatePreview();
@@ -927,6 +1475,18 @@ ${gmailDarkScript}
 
   if (clearInputBtn) {
     clearInputBtn.addEventListener("click", clearInputOnly);
+  }
+
+  if (fetchWebcastBtn) {
+    fetchWebcastBtn.addEventListener("click", async () => {
+      try {
+        renderStatus("info", "Fetching", "Trying to fetch webcast data from ON24.");
+        await fetchWebcastData();
+      } catch (err) {
+        console.error(err);
+        renderStatus("warn", "Fetch failed", err.message);
+      }
+    });
   }
 
   if (toggleTemplateOptionsBtn) {
@@ -943,10 +1503,16 @@ ${gmailDarkScript}
   [headerBgColor, footerBgColor, toggleShowDividers].forEach(el => {
     if (el) {
       el.addEventListener("input", () => {
+        if (el === toggleShowDividers && builderMode === "cleaner") {
+          lastCleanerShowDividers = toggleShowDividers.checked;
+        }
         updateColorLabels();
         updatePreview();
       });
       el.addEventListener("change", () => {
+        if (el === toggleShowDividers && builderMode === "cleaner") {
+          lastCleanerShowDividers = toggleShowDividers.checked;
+        }
         updateColorLabels();
         updatePreview();
       });
@@ -973,7 +1539,7 @@ ${gmailDarkScript}
     });
   });
 
-  document.querySelectorAll(".switch-btn").forEach(btn => {
+  outputModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       setOutputMode(btn.dataset.outputMode);
     });
@@ -1009,11 +1575,33 @@ ${gmailDarkScript}
     }
   });
 
+  [
+    webcastUrlInput,
+    webcastJsonInput,
+    webcastEventType,
+    webcastHeadline,
+    webcastDate,
+    webcastTime,
+    webcastDuration,
+    webcastBody,
+    webcastSponsorLogo,
+    webcastSpeakerImage,
+    webcastSpeakerName,
+    webcastSpeakerRole,
+    webcastCtaUrl,
+    webcastCtaLabel
+  ].forEach(el => {
+    if (el) {
+      el.addEventListener("input", updatePreview);
+    }
+  });
+
   populateBrandOptions();
   clearAll();
   updateColorLabels();
   syncFooterColorState();
   updateStealthHelper();
+  setBuilderMode("cleaner");
   setOutputMode("fragment");
   setViewMode("desktop");
 });

@@ -33,11 +33,6 @@ export const districtadministration = createBrand({
             </a>
           </td>
         </tr>
-        <tr>
-          <td style="padding:0 24px 16px 24px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#7a7a7a;text-align:center;">
-            You are receiving this email as part of a free information service from <i>District Administration</i>.
-          </td>
-        </tr>
       </table>
     </td>
   </tr>

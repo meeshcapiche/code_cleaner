@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cobrand Cleaner</title>
+  <title>Email Assembly Studio</title>
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="app.js"></script>
 </head>
@@ -12,10 +12,15 @@
 <div class="app">
   <header class="topbar">
     <div class="brandlockup">
-      <div class="brandicon">✂</div>
+      <div class="brandicon" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none">
+          <rect x="2.5" y="4.5" width="15" height="11" rx="2"></rect>
+          <path d="M3.5 6l6.5 5 6.5-5"></path>
+        </svg>
+      </div>
       <div>
-        <h1>Cobrand Cleaner</h1>
-        <p>Email Assembly Tool</p>
+        <h1>Email Assembly Studio</h1>
+        <p>Cobrand Cleaner and Webcast Builder</p>
       </div>
     </div>
 
@@ -55,55 +60,17 @@
     </span>
     <h2>What This Tool Does</h2>
   </div>
-  <p>Turns raw client email HTML into cleaner output you can preview, QA, and export as either code-only content or a full branded email.</p>
-  <ol class="quick-steps">
-    <li>Paste or drop in the client HTML.</li>
-    <li>Choose the output type you need.</li>
-    <li>Review the preview, then copy or download the result.</li>
-  </ol>
-  <details class="more-info">
-    <summary>
-      <span>More info</span>
-      <span class="disclosure-icon" aria-hidden="true">
-        <svg viewBox="0 0 20 20" fill="none">
-          <path d="m6 8 4 4 4-4"></path>
-        </svg>
-      </span>
-    </summary>
-    <p>Use <strong>Code only</strong> when you just need cleaned markup for another email builder. Use <strong>Full branded email</strong> when you want this tool to wrap the content with a brand header and footer.</p>
-  </details>
-</section>
-
-<section class="sidebar-section">
-  <div class="section-head section-head-actions">
-    <h2>Client Email HTML</h2>
-    <button id="clearInputBtn" class="btn btn-subtle btn-small" type="button">
-      <span class="btn-label">Clear code</span>
-    </button>
-  </div>
-  <p>Paste the raw HTML below or drag in an .html file.</p>
-
-  <div class="dropwrap" id="dropWrap">
-    <textarea
-      id="inputHtml"
-      class="codebox inputbox"
-      spellcheck="false"
-      placeholder="Paste HTML here"
-    ></textarea>
-    <div class="dropnote" id="dropNote">
-      <span class="dropnote-icon" aria-hidden="true">
-        <svg viewBox="0 0 20 20" fill="none">
-          <path d="M10 3v8"></path>
-          <path d="M6.5 7 10 3.5 13.5 7"></path>
-          <path d="M4 12.5v1A2.5 2.5 0 0 0 6.5 16h7A2.5 2.5 0 0 0 16 13.5v-1"></path>
-        </svg>
-      </span>
-      <span>Drop HTML file here</span>
+  <p>Use <strong>Cobrand Cleaner</strong> to clean existing email HTML or wrap it in a brand template. Use <strong>Webcast Builder</strong> to pull ON24 event details into a branded invite template, then preview, copy, or download the result.</p>
+  <div class="workflow-panel workflow-panel-inline">
+    <p>Choose the workflow you want to use.</p>
+    <div class="mode-switch" id="builderModeSwitch">
+      <button class="switch-btn active" data-builder-mode="cleaner" type="button">Cobrand cleaner</button>
+      <button class="switch-btn" data-builder-mode="webcast" type="button">Webcast builder</button>
     </div>
   </div>
 </section>
 
-<section class="sidebar-section">
+<section class="sidebar-section cleaner-only" id="outputTypeSection">
   <h2>Output Type</h2>
   <p>Choose whether you need cleaned code only or a full branded email package.</p>
 
@@ -113,7 +80,7 @@
 </div>
 </section>
 
-<section class="sidebar-section" id="brandSection">
+<section class="sidebar-section webcast-priority" id="brandSection">
   <h2>Brand Template</h2>
   <p id="brandHelperText">Only needed for full branded email. Pick the brand whose header and footer should wrap the client content.</p>
   <select id="brandSelect" class="select">
@@ -181,6 +148,135 @@
   </div>
 </section>
 
+<section class="sidebar-section cleaner-only">
+  <div class="section-head section-head-actions">
+    <h2>Client Email HTML</h2>
+    <button id="clearInputBtn" class="btn btn-subtle btn-small" type="button">
+      <span class="btn-label">Clear code</span>
+    </button>
+  </div>
+  <p>Paste the raw HTML below or drag in an .html file.</p>
+
+  <div class="dropwrap" id="dropWrap">
+    <textarea
+      id="inputHtml"
+      class="codebox inputbox"
+      spellcheck="false"
+      placeholder="Paste HTML here"
+    ></textarea>
+    <div class="dropnote" id="dropNote">
+      <span class="dropnote-icon" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M10 3v8"></path>
+          <path d="M6.5 7 10 3.5 13.5 7"></path>
+          <path d="M4 12.5v1A2.5 2.5 0 0 0 6.5 16h7A2.5 2.5 0 0 0 16 13.5v-1"></path>
+        </svg>
+      </span>
+      <span>Drop HTML file here</span>
+    </div>
+  </div>
+</section>
+
+<section class="sidebar-section webcast-only" hidden>
+  <div class="section-head section-head-actions">
+    <h2>Webcast Source</h2>
+    <button id="fetchWebcastBtn" class="btn btn-subtle btn-small" type="button">
+      <span class="btn-label">Fetch</span>
+    </button>
+  </div>
+  <p>Paste an ON24 event URL and try fetch first. If browser fetch is blocked, paste the `EventServlet` JSON below instead.</p>
+
+  <label class="stacked-field" for="webcastUrlInput">
+    <span class="field-label">ON24 event URL</span>
+    <input id="webcastUrlInput" class="text-input" type="url" placeholder="https://event.on24.com/wcc/r/...">
+  </label>
+
+  <details class="advanced-options">
+    <summary>
+      <span>Use EventServlet JSON fallback</span>
+      <span class="disclosure-icon" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="m6 8 4 4 4-4"></path>
+        </svg>
+      </span>
+    </summary>
+    <p class="helper-note">Use this only if direct fetch from the ON24 URL is blocked.</p>
+    <label class="stacked-field" for="webcastJsonInput">
+      <span class="field-label">EventServlet JSON</span>
+      <textarea id="webcastJsonInput" class="text-area" spellcheck="false" placeholder="Paste EventServlet JSON here if needed"></textarea>
+    </label>
+  </details>
+</section>
+
+<section class="sidebar-section webcast-only" hidden>
+  <h2>Webcast Content</h2>
+  <p>Fetch fills these in automatically. You can edit anything before export.</p>
+
+  <label class="stacked-field" for="webcastEventType">
+    <span class="field-label">Event label</span>
+    <input id="webcastEventType" class="text-input" type="text" value="Webinar" placeholder="Webinar, On-demand, Ed Talk">
+  </label>
+
+  <label class="stacked-field" for="webcastHeadline">
+    <span class="field-label">Headline</span>
+    <input id="webcastHeadline" class="text-input" type="text" placeholder="Webcast headline">
+  </label>
+
+  <div class="two-up-fields">
+    <label class="stacked-field" for="webcastDate">
+      <span class="field-label">Date</span>
+      <input id="webcastDate" class="text-input" type="text" placeholder="Wednesday, March 11, 2026">
+    </label>
+    <label class="stacked-field" for="webcastTime">
+      <span class="field-label">Time</span>
+      <input id="webcastTime" class="text-input" type="text" placeholder="11:00 AM ET">
+    </label>
+  </div>
+
+  <label class="stacked-field" for="webcastDuration">
+    <span class="field-label">Duration</span>
+    <input id="webcastDuration" class="text-input" type="text" placeholder="1 hour">
+  </label>
+
+  <label class="stacked-field" for="webcastBody">
+    <span class="field-label">Body HTML</span>
+    <textarea id="webcastBody" class="text-area tall" spellcheck="false" placeholder="Event body HTML"></textarea>
+  </label>
+
+  <div class="two-up-fields">
+    <label class="stacked-field" for="webcastSponsorLogo">
+      <span class="field-label">Sponsor logo URL</span>
+      <input id="webcastSponsorLogo" class="text-input" type="url" placeholder="https://...">
+    </label>
+    <label class="stacked-field" for="webcastSpeakerImage">
+      <span class="field-label">Speaker image URL</span>
+      <input id="webcastSpeakerImage" class="text-input" type="url" placeholder="https://...">
+    </label>
+  </div>
+
+  <div class="two-up-fields">
+    <label class="stacked-field" for="webcastSpeakerName">
+      <span class="field-label">Speaker name</span>
+      <input id="webcastSpeakerName" class="text-input" type="text" placeholder="Speaker name">
+    </label>
+    <label class="stacked-field" for="webcastSpeakerRole">
+      <span class="field-label">Speaker title and company</span>
+      <input id="webcastSpeakerRole" class="text-input" type="text" placeholder="Title, Company">
+    </label>
+  </div>
+
+  <div class="two-up-fields">
+    <label class="stacked-field" for="webcastCtaUrl">
+      <span class="field-label">CTA URL</span>
+      <input id="webcastCtaUrl" class="text-input" type="url" placeholder="Registration or landing page URL">
+    </label>
+    <label class="stacked-field" for="webcastCtaLabel">
+      <span class="field-label">CTA label</span>
+      <input id="webcastCtaLabel" class="text-input" type="text" value="Register now">
+    </label>
+  </div>
+</section>
+
 <section class="sidebar-section">
   <div class="section-title">
     <span class="section-icon" aria-hidden="true">
@@ -205,7 +301,7 @@
     </summary>
     <p class="helper-note">If a supported brand is selected and the stealth link field is blank, the tool will use that brand’s default stealth link automatically.</p>
 
-    <label class="stacked-field" for="adIdInput">
+    <label class="stacked-field cleaner-only" for="adIdInput">
       <span class="field-label">Ad ID</span>
       <input id="adIdInput" class="text-input" type="text" inputmode="numeric" placeholder="Example: 1696">
     </label>
@@ -219,7 +315,7 @@
   </details>
 </section>
 
-      <section class="sidebar-section">
+      <section class="sidebar-section cleaner-only">
         <div class="section-title">
           <span class="section-icon" aria-hidden="true">
             <svg viewBox="0 0 20 20" fill="none">
