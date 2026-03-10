@@ -31,7 +31,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const previewFrame = document.getElementById("previewFrame");
   const qaReport = document.getElementById("qaReport");
   const qaCount = document.getElementById("qaCount");
+  const statusPill = document.getElementById("statusPill");
+  const statusMessage = document.getElementById("statusMessage");
   const brandSelect = document.getElementById("brandSelect");
+  const brandHelperText = document.getElementById("brandHelperText");
   const toggleTemplateOptionsBtn = document.getElementById("toggleTemplateOptionsBtn");
   const templateControls = document.getElementById("templateControls");
   const resetTemplateOptionsBtn = document.getElementById("resetTemplateOptionsBtn");
@@ -41,6 +44,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const footerBgValue = document.getElementById("footerBgValue");
   const toggleMatchFooterColor = document.getElementById("toggleMatchFooterColor");
   const toggleShowDividers = document.getElementById("toggleShowDividers");
+  const adIdInput = document.getElementById("adIdInput");
+  const stealthLinkInput = document.getElementById("stealthLinkInput");
+  const stealthHelperText = document.getElementById("stealthHelperText");
   const copyBtn = document.getElementById("copyBtn");
   const downloadBtn = document.getElementById("downloadBtn");
   const copyBtnLabel = copyBtn.querySelector(".btn-label");
@@ -199,6 +205,48 @@ window.addEventListener("DOMContentLoaded", () => {
     }, html || "");
   }
 
+  function getEffectiveStealthLink() {
+    const manualValue = stealthLinkInput?.value.trim() || "";
+    if (manualValue) return manualValue;
+
+    const brand = brandPresets[brandSelect.value];
+    return brand?.stealthLink || "";
+  }
+
+  function updateStealthHelper() {
+    if (!stealthHelperText) return;
+
+    const brand = brandPresets[brandSelect.value];
+    if (stealthLinkInput?.value.trim()) {
+      stealthHelperText.textContent = "A custom stealth link will be injected into the output.";
+      return;
+    }
+
+    if (brand?.stealthLink) {
+      stealthHelperText.textContent = `Default stealth link ready for ${brand.name}. Leave the field blank to use it automatically.`;
+      return;
+    }
+
+    stealthHelperText.textContent = "No default stealth link is available for the current selection.";
+  }
+
+  function buildTrackingMarkup() {
+    const adId = (adIdInput?.value || "").trim();
+    const stealthLink = getEffectiveStealthLink();
+    const blocks = [];
+
+    if (adId) {
+      blocks.push(`<p>\n  <!-- // ADD ID -->\n  <input value="${adId.replace(/"/g, "&quot;")}" name="advertiserid" type="hidden">\n  <!-- // ADD ID -->\n</p>`);
+    }
+
+    if (stealthLink) {
+      const safeLink = stealthLink.replace(/"/g, "&quot;");
+      blocks.push(`<div style="display:none;">\n  <a href="${safeLink}" style="display:none;visibility:hidden;"></a>\n</div>`);
+    }
+
+    return blocks.join("\n");
+  }
+
   function hasValidFullEmailSelection() {
     return outputMode !== "full" || !!brandSelect.value;
   }
@@ -213,6 +261,18 @@ window.addEventListener("DOMContentLoaded", () => {
     downloadBtn.classList.toggle("is-disabled", !enabled);
   }
 
+  function renderStatus(level, pillText, message) {
+    if (statusPill) {
+      statusPill.textContent = pillText;
+      statusPill.className = `status-pill ${level}`;
+    }
+
+    if (statusMessage) {
+      statusMessage.textContent = message;
+      statusMessage.className = `status-card ${level}`;
+    }
+  }
+
   function updateTemplateOptionsVisibility() {
     const canEditTemplate = outputMode === "full" && !!brandSelect.value;
 
@@ -223,6 +283,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (toggleTemplateOptionsBtn) {
       toggleTemplateOptionsBtn.hidden = !canEditTemplate;
       toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateOptionsOpen && canEditTemplate));
+      toggleTemplateOptionsBtn.classList.toggle("is-open", templateOptionsOpen && canEditTemplate);
       const label = toggleTemplateOptionsBtn.querySelector(".btn-label");
       if (label) {
         label.textContent = templateOptionsOpen && canEditTemplate ? "Hide template options" : "Edit template options";
@@ -232,6 +293,14 @@ window.addEventListener("DOMContentLoaded", () => {
     if (templateControls) {
       templateControls.hidden = !(canEditTemplate && templateOptionsOpen);
     }
+
+    if (brandHelperText) {
+      brandHelperText.textContent = outputMode === "full"
+        ? "Required for full branded email. Pick the brand whose header and footer should wrap the client content."
+        : "Optional in code-only mode. Choose a brand only if you want to switch to full branded email.";
+    }
+
+    updateStealthHelper();
   }
 
   function getProcessedClientContent() {
@@ -290,19 +359,22 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     const headMarkup = preservedHeadMarkup ? `${preservedHeadMarkup}\n` : "\n";
-    const thinkAdvisorDefaultSurface =
-      brand.id === "thinkadvisor" &&
+    const preserveLightSurfaceBrands = new Set(["thinkadvisor", "hrexecutive", "districtadministration", "universitybusiness"]);
+    const preserveDefaultSurface =
+      preserveLightSurfaceBrands.has(brand.id) &&
       (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
       (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
     const brandOptions = {
       headerBg: headerBgColor?.value || "#ffffff",
       footerBg: (toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff",
       showDividers: toggleShowDividers?.checked !== false,
-      headerDarkAttr: thinkAdvisorDefaultSurface ? 'data-cobrand-preserve-light="header"' : "",
-      footerDarkAttr: thinkAdvisorDefaultSurface ? 'data-cobrand-preserve-light="footer"' : ""
+      headerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="header"' : "",
+      footerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="footer"' : ""
     };
     const brandHeader = typeof brand.renderHeader === "function" ? brand.renderHeader(brandOptions) : brand.header;
     const brandFooter = typeof brand.renderFooter === "function" ? brand.renderFooter(brandOptions) : brand.footer;
+    const trackingMarkup = buildTrackingMarkup();
+    const contentMarkup = trackingMarkup ? `${trackingMarkup}\n${clientHtml}` : clientHtml;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -315,7 +387,7 @@ ${headMarkup}</head>
 <!-- COBRAND_HEADER_START -->
 ${brandHeader}
 <!-- COBRAND_HEADER_END -->
-${clientHtml}
+${contentMarkup}
 <!-- COBRAND_FOOTER_START -->
 ${brandFooter}
 <!-- COBRAND_FOOTER_END -->
@@ -325,7 +397,9 @@ ${brandFooter}
 
   function buildFragmentHtml() {
     const { clientHtml, preservedHeadMarkup } = getProcessedClientContent();
-    return preservedHeadMarkup ? `${preservedHeadMarkup}\n${clientHtml}`.trim() : clientHtml;
+    const trackingMarkup = buildTrackingMarkup();
+    const contentMarkup = trackingMarkup ? `${trackingMarkup}\n${clientHtml}` : clientHtml;
+    return preservedHeadMarkup ? `${preservedHeadMarkup}\n${contentMarkup}`.trim() : contentMarkup;
   }
 
   function getCurrentOutputHtml() {
@@ -617,6 +691,17 @@ ${gmailDarkScript}
     `).join("");
   }
 
+  function renderQABaseline() {
+    qaCount.textContent = "0 issues";
+    qaCount.className = "qa-pill ok";
+    qaReport.innerHTML = `
+      <div class="qa-item ok">
+        <div class="qa-title">Checks will appear here</div>
+        <div class="qa-text">Once output is generated, this panel will flag email compatibility and size issues.</div>
+      </div>
+    `;
+  }
+
   function prettyPrintHtml(html) {
     const tab = "  ";
     let formatted = "";
@@ -681,28 +766,23 @@ ${gmailDarkScript}
       if (outputMode === "full" && !brandSelect.value) {
         outputStore.html = "";
         updateActionButtons();
+        renderStatus("warn", "Action needed", "Choose a brand to build a full branded email.");
 
         if (previewMode === "code") {
-          codeOutputInner.value = "Select a brand to generate a full email.";
+          codeOutputInner.value = "Choose a brand to generate a full branded email.";
         } else {
           previewFrame.srcdoc = `
             <html>
               <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
                 <div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#667085;padding:40px;text-align:center;">
-                  Select a brand to generate a full email.
+                  Choose a brand to generate a full branded email.
                 </div>
               </body>
             </html>
           `;
         }
 
-        renderQA([
-          {
-            level: "warn",
-            title: "Brand required for full email",
-            text: "Choose a brand template before copying or downloading a full email."
-          }
-        ]);
+        renderQABaseline();
 
         return;
       }
@@ -710,6 +790,16 @@ ${gmailDarkScript}
       const finalHtml = getCurrentOutputHtml();
       outputStore.html = finalHtml;
       updateActionButtons();
+
+      if (!inputHtml.value.trim()) {
+        renderStatus("info", "Using sample", outputMode === "full"
+          ? "Showing a sample content block inside the selected brand template."
+          : "Showing sample content so you can preview the cleanup output before pasting real HTML.");
+      } else {
+        renderStatus("ok", "Output ready", outputMode === "full"
+          ? "Full branded email generated. Review the preview and QA checks, then copy or download."
+          : "Cleaned code generated. Review the preview and QA checks, then copy or download.");
+      }
 
       if (previewMode === "code") {
         const pretty = prettyPrintHtml(finalHtml);
@@ -734,6 +824,7 @@ ${gmailDarkScript}
       renderQA(issues);
     } catch (err) {
       console.error(err);
+      renderStatus("warn", "Error", "The preview could not be generated. Review the error in the QA panel.");
       qaCount.textContent = "error";
       qaCount.className = "qa-pill high";
       qaReport.innerHTML = `
@@ -777,6 +868,8 @@ ${gmailDarkScript}
   function clearAll() {
     inputHtml.value = "";
     brandSelect.value = "";
+    if (adIdInput) adIdInput.value = "";
+    if (stealthLinkInput) stealthLinkInput.value = "";
     outputStore.html = "";
     codeOutputInner.value = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
@@ -792,13 +885,8 @@ ${gmailDarkScript}
       </html>
     `;
 
-    renderQA([
-      {
-        level: "ok",
-        title: "Ready",
-        text: "Paste client HTML to begin."
-      }
-    ]);
+    renderStatus("info", "Ready", "Paste client HTML to begin. You can also drop in an .html file.");
+    renderQABaseline();
 
     updateActionButtons();
     updateTemplateOptionsVisibility();
@@ -912,10 +1000,20 @@ ${gmailDarkScript}
     loadFile(file);
   });
 
+  [adIdInput, stealthLinkInput].forEach(el => {
+    if (el) {
+      el.addEventListener("input", () => {
+        updateStealthHelper();
+        updatePreview();
+      });
+    }
+  });
+
   populateBrandOptions();
   clearAll();
   updateColorLabels();
   syncFooterColorState();
+  updateStealthHelper();
   setOutputMode("fragment");
   setViewMode("desktop");
 });

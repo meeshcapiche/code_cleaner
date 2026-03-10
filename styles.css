@@ -177,8 +177,35 @@ textarea{
   overflow:auto;
 }
 
+.sidebar-section{
+  padding:16px;
+  border:1px solid #e3e8f1;
+  border-radius:18px;
+  background:#ffffff;
+  box-shadow:0 4px 14px rgba(16,24,40,.03);
+}
+
 .sidebar-section + .sidebar-section{
   margin-top:22px;
+}
+
+.intro-section{
+  background:
+    radial-gradient(circle at top right, rgba(14,116,144,.10), transparent 42%),
+    linear-gradient(180deg, #f2fbff 0%, #eef8ff 100%);
+  border-color:#cfe5ef;
+}
+
+.intro-title{
+  margin-bottom:8px;
+}
+
+.intro-icon{
+  width:24px;
+  height:24px;
+  border-radius:999px;
+  background:rgba(8,145,178,.12);
+  color:#0f766e;
 }
 
 .sidebar-section h2{
@@ -193,6 +220,127 @@ textarea{
   color:var(--muted);
   font-size:13px;
   line-height:1.45;
+}
+
+.quick-steps{
+  margin:0 0 12px;
+  padding-left:18px;
+  color:#475467;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.quick-steps li + li{
+  margin-top:4px;
+}
+
+.more-info,
+.advanced-options{
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+}
+
+.more-info summary,
+.advanced-options summary{
+  padding:12px 14px;
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  font-size:13px;
+  font-weight:600;
+  color:#344054;
+}
+
+.more-info summary::-webkit-details-marker,
+.advanced-options summary::-webkit-details-marker{
+  display:none;
+}
+
+.more-info p{
+  margin:0;
+  padding:0 14px 14px;
+}
+
+.disclosure-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:24px;
+  height:24px;
+  border-radius:999px;
+  background:#f2f4f7;
+  color:#667085;
+  transition:transform .18s ease, background .18s ease, color .18s ease;
+}
+
+.disclosure-icon svg{
+  width:14px;
+  height:14px;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.more-info[open] .disclosure-icon,
+.advanced-options[open] .disclosure-icon{
+  transform:rotate(180deg);
+  background:#e0e7ff;
+  color:#4338ca;
+}
+
+.advanced-options{
+  overflow:hidden;
+}
+
+.advanced-options[open]{
+  padding-bottom:14px;
+}
+
+.advanced-options .helper-note{
+  margin:0 14px 12px;
+}
+
+.advanced-options .toggle-card{
+  margin:0 14px;
+}
+
+.advanced-options .toggle-card + .toggle-card{
+  margin-top:10px;
+}
+
+.stacked-field{
+  display:block;
+  margin:0 14px 12px;
+}
+
+.stacked-field .field-label{
+  display:block;
+  margin-bottom:6px;
+}
+
+.text-input{
+  width:100%;
+  height:42px;
+  padding:0 14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  color:var(--text);
+  outline:none;
+}
+
+.text-input:focus{
+  border-color:#cfd3ff;
+  box-shadow:0 0 0 4px rgba(99,91,255,.10);
+}
+
+.compact-note{
+  margin:0 14px !important;
 }
 
 .inputbox{
@@ -223,7 +371,7 @@ textarea{
   border:1px solid var(--line);
   border-radius:14px;
   background:#fff;
-  padding:0 14px;
+  padding:0 20px 0 14px;
   outline:none;
 }
 
@@ -233,6 +381,19 @@ textarea{
 
 .template-toggle{
   margin-top:12px;
+  width:100%;
+  justify-content:space-between;
+  padding-right:10px;
+}
+
+.template-toggle .disclosure-icon{
+  flex:0 0 auto;
+}
+
+.template-toggle.is-open .disclosure-icon{
+  transform:rotate(180deg);
+  background:#e0e7ff;
+  color:#4338ca;
 }
 
 .template-head{
@@ -449,6 +610,54 @@ textarea{
   font-weight:600;
 }
 
+.status-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:28px;
+  padding:0 12px;
+  border-radius:999px;
+  background:#e5eefc;
+  color:#175cd3;
+  font-size:12px;
+  font-weight:600;
+}
+
+.status-pill.ok{
+  background:#ecfdf3;
+  color:#067647;
+}
+
+.status-pill.warn{
+  background:#fff1f3;
+  color:#c01048;
+}
+
+.status-card{
+  padding:14px 16px;
+  border:1px solid #dbe2ee;
+  border-radius:14px;
+  background:#fff;
+  color:#475467;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.status-card.ok{
+  border-color:#d1fadf;
+  background:#f6fef9;
+}
+
+.status-card.warn{
+  border-color:#fecdd3;
+  background:#fff7f8;
+}
+
+.status-card.info{
+  border-color:#dbe2ee;
+  background:#fbfcfe;
+}
+
 .qa-pill.high{
   background:#fee4e2;
   color:#d92d20;
@@ -663,6 +872,10 @@ textarea{
   pointer-events:none;
 }
 
+.is-fragment #brandHelperText{
+  color:#98a2b3;
+}
+
 .btn.is-disabled,
 .btn:disabled{
   opacity:.45;
@@ -776,6 +989,10 @@ textarea{
 
   .sidebar{
     padding:16px;
+  }
+
+  .sidebar-section{
+    padding:14px;
   }
 
   .preview-toolbar{

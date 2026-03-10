@@ -44,6 +44,36 @@
 
   <main class="workspace">
     <aside class="sidebar">
+<section class="sidebar-section intro-section">
+  <div class="section-title intro-title">
+    <span class="section-icon intro-icon" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="7"></circle>
+        <path d="M10 8v5"></path>
+        <path d="M10 5.75h.01"></path>
+      </svg>
+    </span>
+    <h2>What This Tool Does</h2>
+  </div>
+  <p>Turns raw client email HTML into cleaner output you can preview, QA, and export as either code-only content or a full branded email.</p>
+  <ol class="quick-steps">
+    <li>Paste or drop in the client HTML.</li>
+    <li>Choose the output type you need.</li>
+    <li>Review the preview, then copy or download the result.</li>
+  </ol>
+  <details class="more-info">
+    <summary>
+      <span>More info</span>
+      <span class="disclosure-icon" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="m6 8 4 4 4-4"></path>
+        </svg>
+      </span>
+    </summary>
+    <p>Use <strong>Code only</strong> when you just need cleaned markup for another email builder. Use <strong>Full branded email</strong> when you want this tool to wrap the content with a brand header and footer.</p>
+  </details>
+</section>
+
 <section class="sidebar-section">
   <div class="section-head section-head-actions">
     <h2>Client Email HTML</h2>
@@ -51,14 +81,14 @@
       <span class="btn-label">Clear code</span>
     </button>
   </div>
-  <p>Paste the raw HTML from your advertising client below or drag in an .html file.</p>
+  <p>Paste the raw HTML below or drag in an .html file.</p>
 
   <div class="dropwrap" id="dropWrap">
     <textarea
       id="inputHtml"
       class="codebox inputbox"
       spellcheck="false"
-      placeholder="Paste client email HTML here or drop an .html file…"
+      placeholder="Paste HTML here"
     ></textarea>
     <div class="dropnote" id="dropNote">
       <span class="dropnote-icon" aria-hidden="true">
@@ -74,30 +104,29 @@
 </section>
 
 <section class="sidebar-section">
-  <h2>Generate</h2>
-  <p>Choose whether to build a full email or just a cleaned fragment of code for Omeda's designer.</p>
+  <h2>Output Type</h2>
+  <p>Choose whether you need cleaned code only or a full branded email package.</p>
 
 <div class="mode-switch" id="outputModeSwitch">
-  <button class="switch-btn" data-output-mode="full" type="button">Full email</button>
-  <button class="switch-btn active" data-output-mode="fragment" type="button">Clean fragment</button>
+  <button class="switch-btn" data-output-mode="full" type="button">Full branded email</button>
+  <button class="switch-btn active" data-output-mode="fragment" type="button">Code only</button>
 </div>
 </section>
 
 <section class="sidebar-section" id="brandSection">
   <h2>Brand Template</h2>
-  <p>Pick the brand whose header and footer will wrap the client email.</p>
+  <p id="brandHelperText">Only needed for full branded email. Pick the brand whose header and footer should wrap the client content.</p>
   <select id="brandSelect" class="select">
     <option value="">Choose a brand…</option>
   </select>
 
-  <button id="toggleTemplateOptionsBtn" class="btn btn-subtle btn-small template-toggle" type="button" hidden aria-expanded="false">
-    <span class="btn-icon" aria-hidden="true">
+      <button id="toggleTemplateOptionsBtn" class="btn btn-subtle btn-small template-toggle" type="button" hidden aria-expanded="false">
+    <span class="btn-label">Edit template options</span>
+    <span class="disclosure-icon" aria-hidden="true">
       <svg viewBox="0 0 20 20" fill="none">
-        <path d="m3.5 14.5 7.75-7.75a2.12 2.12 0 1 1 3 3L6.5 17.5H3.5z"></path>
-        <path d="m10.5 4.5 5 5"></path>
+        <path d="m6 8 4 4 4-4"></path>
       </svg>
     </span>
-    <span class="btn-label">Edit template options</span>
   </button>
 
   <div id="templateControls" class="template-controls" hidden>
@@ -132,7 +161,7 @@
       </label>
     </div>
 
-    <label class="toggle-card toggle-card-compact">
+          <label class="toggle-card toggle-card-compact">
       <input id="toggleMatchFooterColor" type="checkbox">
       <span class="toggle-ui"></span>
       <span class="toggle-copy">
@@ -152,6 +181,44 @@
   </div>
 </section>
 
+<section class="sidebar-section">
+  <div class="section-title">
+    <span class="section-icon" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M4 5.5h12"></path>
+        <path d="M4 10h12"></path>
+        <path d="M4 14.5h12"></path>
+      </svg>
+    </span>
+    <h2>Optional Tracking</h2>
+  </div>
+  <p>Add an ad ID or stealth link if this send needs tracking code injected into the output.</p>
+
+  <details class="advanced-options">
+    <summary>
+      <span>Review tracking settings</span>
+      <span class="disclosure-icon" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="m6 8 4 4 4-4"></path>
+        </svg>
+      </span>
+    </summary>
+    <p class="helper-note">If a supported brand is selected and the stealth link field is blank, the tool will use that brand’s default stealth link automatically.</p>
+
+    <label class="stacked-field" for="adIdInput">
+      <span class="field-label">Ad ID</span>
+      <input id="adIdInput" class="text-input" type="text" inputmode="numeric" placeholder="Example: 1696">
+    </label>
+
+    <label class="stacked-field" for="stealthLinkInput">
+      <span class="field-label">Stealth link</span>
+      <input id="stealthLinkInput" class="text-input" type="url" placeholder="Optional brand stealth URL">
+    </label>
+
+    <p id="stealthHelperText" class="helper-note compact-note">No default stealth link is available for the current selection.</p>
+  </details>
+</section>
+
       <section class="sidebar-section">
         <div class="section-title">
           <span class="section-icon" aria-hidden="true">
@@ -160,18 +227,25 @@
               <path d="m14.5 10.5.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"></path>
             </svg>
           </span>
-          <h2>Processing Options</h2>
+          <h2>Advanced Cleanup</h2>
         </div>
-        <p class="helper-note">For most cleanups, leave all of these on. Turn one off only if the original email loses styling or content you want to keep.</p>
-
-        
+        <details class="advanced-options">
+          <summary>
+            <span>Review cleanup settings</span>
+            <span class="disclosure-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none">
+                <path d="m6 8 4 4 4-4"></path>
+              </svg>
+            </span>
+          </summary>
+          <p class="helper-note">For most cleanups, leave these on. Turn one off only if the original email loses styling or content you want to keep.</p>
 
 <label class="toggle-card">
   <input id="toggleKeepStyles" type="checkbox" checked>
   <span class="toggle-ui"></span>
   <span class="toggle-copy">
-    <strong>Keep Style Blocks</strong>
-    <small>Preserves embedded style tags and email-safe head CSS for Stripo-like or responsive source HTML.</small>
+    <strong>Keep style blocks</strong>
+    <small>Preserves embedded style tags and email-safe head CSS for responsive source HTML.</small>
   </span>
 </label>
 
@@ -179,8 +253,8 @@
   <input id="toggleRemovePreview" type="checkbox" checked>
   <span class="toggle-ui"></span>
   <span class="toggle-copy">
-    <strong>Remove Preview Text</strong>
-    <small>Strips only hidden preheader text so your ESP can set its own. Visible content is not touched.</small>
+    <strong>Remove hidden preheader</strong>
+    <small>Strips hidden preview text so your ESP can set its own. Visible content is not touched.</small>
   </span>
 </label>
 
@@ -188,8 +262,8 @@
   <input id="toggleRemoveTitle" type="checkbox" checked>
   <span class="toggle-ui"></span>
   <span class="toggle-copy">
-    <strong>Remove Title Tag</strong>
-    <small>Removes the title tag since your ESP handles the subject line.</small>
+    <strong>Remove title tag</strong>
+    <small>Removes the page title because your ESP handles the subject line.</small>
   </span>
 </label>
 
@@ -197,21 +271,32 @@
   <input id="toggleRemoveScripts" type="checkbox" checked>
   <span class="toggle-ui"></span>
   <span class="toggle-copy">
-    <strong>Remove Web Scripts</strong>
-    <small>Removes website-only code like JavaScript. Emails do not use this, so it is usually safest to leave on.</small>
+    <strong>Remove scripts</strong>
+    <small>Removes JavaScript and similar web-only code that email clients do not support.</small>
   </span>
 </label>
+        </details>
+      </section>
+
+      <section class="sidebar-section status-section">
+        <div class="section-head">
+          <h2>Status</h2>
+          <span id="statusPill" class="status-pill">Ready</span>
+        </div>
+        <div id="statusMessage" class="status-card">
+          Paste client HTML to begin.
+        </div>
       </section>
 
       <section class="sidebar-section qa-section">
         <div class="section-head">
-          <h2>QA Report</h2>
+          <h2>QA Checks</h2>
           <span id="qaCount" class="qa-pill">0 issues</span>
         </div>
         <div id="qaReport" class="qa-list">
           <div class="qa-item ok">
-            <div class="qa-title">Ready</div>
-            <div class="qa-text">Paste client HTML to begin.</div>
+            <div class="qa-title">Checks will appear here</div>
+            <div class="qa-text">Once output is generated, this panel will flag email compatibility and size issues.</div>
           </div>
         </div>
       </section>
