@@ -350,9 +350,22 @@ textarea{
   margin:0 14px 12px;
 }
 
+.field-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:6px;
+}
+
 .stacked-field .field-label{
   display:block;
-  margin-bottom:6px;
+}
+
+.webcast-fetch-row{
+  display:flex;
+  justify-content:flex-end;
+  margin:0 14px 12px;
 }
 
 .text-input{
@@ -785,6 +798,7 @@ textarea{
   flex-direction:column;
   min-width:0;
   min-height:0;
+  height:100%;
   background:linear-gradient(180deg,#f8f7ff 0%,#f4f2ff 100%);
 }
 
@@ -913,6 +927,9 @@ textarea{
 
 .view-pane.active{
   display:flex;
+  flex:1 1 auto;
+  min-width:0;
+  min-height:0;
 }
 
 .code-pane{
@@ -1004,6 +1021,8 @@ textarea{
 .preview-shell{
   flex:1 1 auto;
   min-height:0;
+  min-width:0;
+  height:100%;
   display:flex;
   align-items:stretch;
   padding:18px;
@@ -1013,14 +1032,24 @@ textarea{
 
 #previewPane,
 #codePane{
+  flex:1 1 auto;
   width:100%;
+  min-width:0;
+  min-height:0;
+}
+
+#previewPane.active,
+#codePane.active{
+  display:flex;
+  flex:1 1 auto;
+  align-items:stretch;
 }
 
 #previewFrame{
   flex:1 1 auto;
   width:100%;
-  height:calc(100vh - 128px);
-  min-height:700px;
+  height:100%;
+  min-height:680px;
   min-width:0;
   border:1px solid #e3ddff;
   border-radius:18px;
@@ -1038,6 +1067,132 @@ textarea{
 #previewFrame.is-dark{
   background:#0b1220;
   border-color:#1f2937;
+}
+
+.editor-dialog{
+  width:min(920px, calc(100vw - 32px));
+  max-width:920px;
+  border:0;
+  padding:0;
+  border-radius:22px;
+  background:transparent;
+  box-shadow:none;
+}
+
+.editor-dialog:not([open]){
+  display:none;
+  pointer-events:none;
+}
+
+.editor-dialog[open]{
+  pointer-events:auto;
+}
+
+.editor-dialog::backdrop{
+  background:rgba(15,23,42,.42);
+  backdrop-filter:blur(4px);
+}
+
+.editor-dialog-card{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  margin:0;
+  padding:22px;
+  border:1px solid #e3ddff;
+  border-radius:22px;
+  background:#ffffff;
+  box-shadow:0 30px 70px rgba(17,24,39,.22);
+}
+
+.editor-dialog-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.editor-dialog-head h2{
+  margin:0 0 6px;
+  font-size:20px;
+  line-height:1.15;
+}
+
+.editor-dialog-head p{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+}
+
+.editor-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:12px;
+  border:1px solid #e3ddff;
+  border-radius:16px;
+  background:#faf9ff;
+}
+
+.editor-tool{
+  appearance:none;
+  border:1px solid #d7d2ff;
+  background:#f3f1ff;
+  color:var(--primary);
+  border-radius:10px;
+  padding:9px 12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.editor-tool:hover{
+  background:#ece9ff;
+}
+
+.editor-surface,
+.editor-source{
+  width:100%;
+  min-height:420px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#ffffff;
+  color:var(--text);
+  overflow:auto;
+}
+
+.editor-surface{
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.7;
+  outline:none;
+}
+
+.editor-surface img{
+  max-width:100%;
+  height:auto;
+}
+
+.editor-source{
+  resize:vertical;
+  font-family:var(--mono);
+  font-size:14px;
+  line-height:1.6;
+  outline:none;
+}
+
+.editor-surface:focus,
+.editor-source:focus{
+  border-color:#cfd3ff;
+  box-shadow:0 0 0 4px rgba(91,83,201,.09);
+}
+
+.editor-dialog-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
 }
 
 .sidebar::-webkit-scrollbar,
@@ -1112,6 +1267,18 @@ textarea{
 
   #previewFrame{
     min-height:520px;
+  }
+
+  .editor-dialog{
+    width:calc(100vw - 20px);
+  }
+
+  .editor-dialog-card{
+    padding:18px;
+  }
+
+  .editor-dialog-head{
+    flex-direction:column;
   }
 
   .two-up-fields{

@@ -72,13 +72,24 @@ window.addEventListener("DOMContentLoaded", () => {
   const webcastSpeakerRole = document.getElementById("webcastSpeakerRole");
   const webcastCtaUrl = document.getElementById("webcastCtaUrl");
   const webcastCtaLabel = document.getElementById("webcastCtaLabel");
+  const openBodyEditorBtn = document.getElementById("openBodyEditorBtn");
+  const bodyEditorDialog = document.getElementById("bodyEditorDialog");
+  const closeBodyEditorBtn = document.getElementById("closeBodyEditorBtn");
+  const cancelBodyEditorBtn = document.getElementById("cancelBodyEditorBtn");
+  const saveBodyEditorBtn = document.getElementById("saveBodyEditorBtn");
+  const toggleBodySourceBtn = document.getElementById("toggleBodySourceBtn");
+  const bodyEditorSurface = document.getElementById("bodyEditorSurface");
+  const bodyEditorSource = document.getElementById("bodyEditorSource");
 
+  const STORAGE_KEY = "email-assembly-studio-state-v1";
   const outputStore = { html: "" };
   let builderMode = "cleaner";
   let previewMode = "desktop";
   let outputMode = "fragment";
   let lastCleanerOutputMode = "fragment";
   let lastCleanerShowDividers = true;
+  let webcastSpeakers = [];
+  let isRestoringState = false;
   let templateOptionsOpen = false;
   const defaultTemplateOptions = {
     headerBg: "#ffffff",
@@ -89,9 +100,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function populateBrandOptions() {
     const currentValue = brandSelect.value;
+    const sortedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name));
 
     brandSelect.innerHTML = '<option value="">Choose a brand…</option>';
-    brands.forEach(brand => {
+    sortedBrands.forEach(brand => {
       const option = document.createElement("option");
       option.value = brand.id;
       option.textContent = brand.name;
@@ -301,13 +313,109 @@ window.addEventListener("DOMContentLoaded", () => {
     return match ? normalizeOn24Url(match[1]) : "";
   }
 
+  function extractSponsorSection(html) {
+    const source = String(html || "").trim();
+    if (!source) {
+      return { bodyHtml: "", sponsorLogo: "" };
+    }
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = source;
+
+    const sponsorMarkers = Array.from(wrapper.querySelectorAll("*")).filter(node =>
+      /(this event is sponsored by|sponsored by\s*:?\s*$)/i.test((node.textContent || "").trim())
+    );
+    let sponsorLogo = "";
+
+    function findRemovalRoot(node) {
+      return node.closest("table, tr, td, section, article, div, p, h1, h2, h3, h4, h5, h6, li") || node;
+    }
+
+    function isImageOnlyBlock(node) {
+      if (!node) return false;
+      const text = (node.textContent || "").replace(/\s+/g, "").trim();
+      return !!node.querySelector("img") && !text;
+    }
+
+    sponsorMarkers.forEach(marker => {
+      let root = findRemovalRoot(marker);
+      if (!sponsorLogo) {
+        sponsorLogo = extractFirstImageFromHtml(root.outerHTML);
+      }
+
+      let sibling = root.nextElementSibling;
+      let checkedSiblings = 0;
+      while (sibling && checkedSiblings < 2) {
+        const nextSibling = sibling.nextElementSibling;
+        if (!sponsorLogo) {
+          sponsorLogo = extractFirstImageFromHtml(sibling.outerHTML);
+        }
+        if (isImageOnlyBlock(sibling) || /sponsor/i.test(sibling.className || "")) {
+          sibling.remove();
+        }
+        sibling = nextSibling;
+        checkedSiblings += 1;
+      }
+
+      root.remove();
+    });
+
+    Array.from(wrapper.querySelectorAll("p, div, h1, h2, h3, h4, h5, h6, td")).forEach(node => {
+      const text = (node.textContent || "").replace(/\s+/g, " ").trim();
+      if (/^(this event is sponsored by|sponsored by):?$/i.test(text)) {
+        node.remove();
+      }
+    });
+
+    Array.from(wrapper.querySelectorAll("div, table, tr, td, p")).forEach(node => {
+      const text = (node.textContent || "").replace(/\s+/g, " ").trim();
+      const hasImage = !!node.querySelector("img");
+      if (!hasImage) return;
+
+      const looksLikeSponsorCard =
+        /^(sponsored by|this event is sponsored by):?$/i.test(text) ||
+        (/sponsored by/i.test(text) && text.length < 40);
+
+      if (!looksLikeSponsorCard) return;
+
+      if (!sponsorLogo) {
+        sponsorLogo = extractFirstImageFromHtml(node.outerHTML);
+      }
+
+      node.remove();
+    });
+
+    Array.from(wrapper.querySelectorAll("img")).forEach(img => {
+      if (!sponsorLogo) return;
+      const src = normalizeOn24Url(img.getAttribute("src") || "");
+      if (src === sponsorLogo && !img.closest("[data-webcast-sponsor]")) {
+        const parentBlock = img.closest("p, div, td, table");
+        if (parentBlock && isImageOnlyBlock(parentBlock)) {
+          parentBlock.remove();
+        }
+      }
+    });
+
+    const bodyHtml = wrapper.innerHTML
+      .replace(/<(p|div|td|tr|table)\b[^>]*>\s*(?:&nbsp;|\s|<br\s*\/?>)*<\/\1>/gi, "")
+      .trim();
+
+    return { bodyHtml, sponsorLogo };
+  }
+
   function parseOn24EventPayload(payload) {
     const event = payload?.event;
     const session = event?.session || {};
-    const speaker = Array.isArray(session.speakers) ? session.speakers[0] || {} : {};
     const durationValue = event?.extendedeventinfo?.eventinfo?.sessionLengthMinutes?.value || "";
-    const speakerRoleParts = [speaker.title, speaker.company].filter(Boolean);
     const normalizedBodyHtml = normalizeOn24HtmlAssets(session.eventAbstract || "");
+    const sponsorSection = extractSponsorSection(normalizedBodyHtml);
+    const speakers = Array.isArray(session.speakers)
+      ? session.speakers.map(speaker => ({
+          name: speaker?.name || "",
+          role: [speaker?.title, speaker?.company].filter(Boolean).join(", "),
+          image: normalizeOn24Url(speaker?.photo || "")
+        })).filter(speaker => speaker.name || speaker.role || speaker.image)
+      : [];
+    const firstSpeaker = speakers[0] || {};
 
     return {
       eventType: event?.custom2 || "Webinar",
@@ -315,16 +423,18 @@ window.addEventListener("DOMContentLoaded", () => {
       date: event?.localizedeventdate || "",
       time: event?.localizedeventtime || "",
       duration: formatDurationLabel(durationValue),
-      bodyHtml: normalizedBodyHtml,
-      sponsorLogo: extractFirstImageFromHtml(normalizedBodyHtml),
-      speakerImage: normalizeOn24Url(speaker.photo || ""),
-      speakerName: speaker.name || "",
-      speakerRole: speakerRoleParts.join(", "),
+      bodyHtml: sponsorSection.bodyHtml,
+      sponsorLogo: sponsorSection.sponsorLogo || extractFirstImageFromHtml(normalizedBodyHtml),
+      speakers,
+      speakerImage: firstSpeaker.image || "",
+      speakerName: firstSpeaker.name || "",
+      speakerRole: firstSpeaker.role || "",
       ctaUrl: webcastUrlInput?.value.trim() || event?.registrationurl || ""
     };
   }
 
   function populateWebcastFields(data = {}) {
+    webcastSpeakers = Array.isArray(data.speakers) ? data.speakers : [];
     if (webcastEventType) webcastEventType.value = data.eventType || webcastEventType.value || "Webinar";
     if (webcastHeadline) webcastHeadline.value = data.headline || "";
     if (webcastDate) webcastDate.value = data.date || "";
@@ -340,6 +450,15 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function getWebcastFields() {
+    const fallbackSpeaker = {
+      image: webcastSpeakerImage?.value.trim() || "",
+      name: webcastSpeakerName?.value.trim() || "",
+      role: webcastSpeakerRole?.value.trim() || ""
+    };
+    const speakers = webcastSpeakers.length
+      ? webcastSpeakers.filter(speaker => speaker?.name || speaker?.role || speaker?.image)
+      : ((fallbackSpeaker.name || fallbackSpeaker.role || fallbackSpeaker.image) ? [fallbackSpeaker] : []);
+
     return {
       eventType: webcastEventType?.value.trim() || "Webinar",
       headline: webcastHeadline?.value.trim() || "",
@@ -348,9 +467,10 @@ window.addEventListener("DOMContentLoaded", () => {
       duration: webcastDuration?.value.trim() || "",
       bodyHtml: webcastBody?.value.trim() || "",
       sponsorLogo: webcastSponsorLogo?.value.trim() || "",
-      speakerImage: webcastSpeakerImage?.value.trim() || "",
-      speakerName: webcastSpeakerName?.value.trim() || "",
-      speakerRole: webcastSpeakerRole?.value.trim() || "",
+      speakers,
+      speakerImage: fallbackSpeaker.image,
+      speakerName: fallbackSpeaker.name,
+      speakerRole: fallbackSpeaker.role,
       ctaUrl: webcastCtaUrl?.value.trim() || "",
       ctaLabel: webcastCtaLabel?.value.trim() || "Register now"
     };
@@ -361,6 +481,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return {
         accent: "#8b2436",
         accentDark: "#6f1c2b",
+        buttonAccent: "#c33652",
+        buttonAccentDark: "#a92d46",
         labelBackground: "#fdf0f2",
         labelText: "#8b2436",
         metaBackground: "#f7f7f8",
@@ -376,6 +498,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return {
         accent: "#1f4f8c",
         accentDark: "#16385f",
+        buttonAccent: "#1f4f8c",
+        buttonAccentDark: "#16385f",
         labelBackground: "#edf4fb",
         labelText: "#1f4f8c",
         metaBackground: "#f7f8fb",
@@ -391,6 +515,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return {
         accent: "#234a86",
         accentDark: "#17325b",
+        buttonAccent: "#234a86",
+        buttonAccentDark: "#17325b",
         labelBackground: "#edf4fb",
         labelText: "#234a86",
         metaBackground: "#f7f8fb",
@@ -405,6 +531,8 @@ window.addEventListener("DOMContentLoaded", () => {
     return {
       accent: "#5b53c9",
       accentDark: "#4b44af",
+      buttonAccent: "#5b53c9",
+      buttonAccentDark: "#4b44af",
       labelBackground: "#f3f1ff",
       labelText: "#5b53c9",
       metaBackground: "#f7f7fb",
@@ -442,6 +570,112 @@ window.addEventListener("DOMContentLoaded", () => {
       bodyHtml: source.replace(firstListMatch[0], "").trim(),
       takeawaysHtml: firstListMatch[0].trim()
     };
+  }
+
+  function buildSpeakerCardsMarkup(speakers, fontStack) {
+    if (!speakers.length) return "";
+
+    return speakers.map(speaker => `
+      <table class="webcast-speaker-card" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border:1px solid #f0f0f0;border-radius:12px;background:#ffffff;table-layout:fixed;">
+        <tr>
+          ${speaker.image ? `<td class="webcast-speaker-image-wrap" width="136" style="padding:24px 0 24px 24px;vertical-align:middle;">
+            <img class="webcast-speaker-image" src="${speaker.image.replace(/"/g, "&quot;")}" alt="${(speaker.name || "Speaker").replace(/"/g, "&quot;")}" style="display:block;width:96px;max-width:96px;height:96px;border-radius:14px;border:0;object-fit:cover;">
+          </td>` : ""}
+          <td class="webcast-speaker-copy" style="padding:24px;vertical-align:middle;font-family:${fontStack};color:#1f2937;word-break:break-word;overflow-wrap:anywhere;">
+            <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#9ca3af;">Speaker</p>
+            <p style="margin:4px 0 0;font-size:17px;font-weight:700;color:#111827;">${speaker.name || ""}</p>
+            <p style="margin:10px 0 0;font-size:13px;line-height:1.8;color:#6b7280;">${speaker.role || ""}</p>
+          </td>
+        </tr>
+      </table>`).join('<div style="height:14px;line-height:14px;">&nbsp;</div>');
+  }
+
+  function saveState() {
+    if (isRestoringState) return;
+
+    const state = {
+      builderMode,
+      previewMode,
+      outputMode,
+      brand: brandSelect?.value || "",
+      inputHtml: inputHtml?.value || "",
+      adId: adIdInput?.value || "",
+      stealthLink: stealthLinkInput?.value || "",
+      headerBg: headerBgColor?.value || "",
+      footerBg: footerBgColor?.value || "",
+      matchFooterColor: !!toggleMatchFooterColor?.checked,
+      showDividers: !!toggleShowDividers?.checked,
+      templateOptionsOpen,
+      webcastUrl: webcastUrlInput?.value || "",
+      webcastJson: webcastJsonInput?.value || "",
+      webcastEventType: webcastEventType?.value || "",
+      webcastHeadline: webcastHeadline?.value || "",
+      webcastDate: webcastDate?.value || "",
+      webcastTime: webcastTime?.value || "",
+      webcastDuration: webcastDuration?.value || "",
+      webcastBody: webcastBody?.value || "",
+      webcastSponsorLogo: webcastSponsorLogo?.value || "",
+      webcastSpeakerImage: webcastSpeakerImage?.value || "",
+      webcastSpeakerName: webcastSpeakerName?.value || "",
+      webcastSpeakerRole: webcastSpeakerRole?.value || "",
+      webcastCtaUrl: webcastCtaUrl?.value || "",
+      webcastCtaLabel: webcastCtaLabel?.value || "",
+      webcastSpeakers
+    };
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function restoreState() {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const state = JSON.parse(raw);
+      isRestoringState = true;
+
+      if (typeof state.inputHtml === "string" && inputHtml) inputHtml.value = state.inputHtml;
+      if (typeof state.brand === "string" && brandSelect) brandSelect.value = state.brand;
+      if (typeof state.adId === "string" && adIdInput) adIdInput.value = state.adId;
+      if (typeof state.stealthLink === "string" && stealthLinkInput) stealthLinkInput.value = state.stealthLink;
+      if (typeof state.headerBg === "string" && headerBgColor) headerBgColor.value = state.headerBg;
+      if (typeof state.footerBg === "string" && footerBgColor) footerBgColor.value = state.footerBg;
+      if (toggleMatchFooterColor) toggleMatchFooterColor.checked = !!state.matchFooterColor;
+      if (toggleShowDividers) toggleShowDividers.checked = !!state.showDividers;
+      lastCleanerShowDividers = !!state.showDividers;
+      lastCleanerOutputMode = state.outputMode === "full" ? "full" : "fragment";
+      templateOptionsOpen = !!state.templateOptionsOpen;
+      if (typeof state.webcastUrl === "string" && webcastUrlInput) webcastUrlInput.value = state.webcastUrl;
+      if (typeof state.webcastJson === "string" && webcastJsonInput) webcastJsonInput.value = state.webcastJson;
+      if (typeof state.webcastEventType === "string" && webcastEventType) webcastEventType.value = state.webcastEventType;
+      if (typeof state.webcastHeadline === "string" && webcastHeadline) webcastHeadline.value = state.webcastHeadline;
+      if (typeof state.webcastDate === "string" && webcastDate) webcastDate.value = state.webcastDate;
+      if (typeof state.webcastTime === "string" && webcastTime) webcastTime.value = state.webcastTime;
+      if (typeof state.webcastDuration === "string" && webcastDuration) webcastDuration.value = state.webcastDuration;
+      if (typeof state.webcastBody === "string" && webcastBody) webcastBody.value = state.webcastBody;
+      if (typeof state.webcastSponsorLogo === "string" && webcastSponsorLogo) webcastSponsorLogo.value = state.webcastSponsorLogo;
+      if (typeof state.webcastSpeakerImage === "string" && webcastSpeakerImage) webcastSpeakerImage.value = state.webcastSpeakerImage;
+      if (typeof state.webcastSpeakerName === "string" && webcastSpeakerName) webcastSpeakerName.value = state.webcastSpeakerName;
+      if (typeof state.webcastSpeakerRole === "string" && webcastSpeakerRole) webcastSpeakerRole.value = state.webcastSpeakerRole;
+      if (typeof state.webcastCtaUrl === "string" && webcastCtaUrl) webcastCtaUrl.value = state.webcastCtaUrl;
+      if (typeof state.webcastCtaLabel === "string" && webcastCtaLabel) webcastCtaLabel.value = state.webcastCtaLabel;
+      webcastSpeakers = Array.isArray(state.webcastSpeakers) ? state.webcastSpeakers : [];
+
+      syncFooterColorState();
+      updateColorLabels();
+      setBuilderMode(state.builderMode === "webcast" ? "webcast" : "cleaner");
+      setOutputMode(state.outputMode === "full" ? "full" : "fragment");
+      setViewMode(["desktop", "mobile", "code", "dark"].includes(state.previewMode) ? state.previewMode : "desktop");
+      isRestoringState = false;
+      return true;
+    } catch (err) {
+      console.error(err);
+      isRestoringState = false;
+      return false;
+    }
   }
 
   async function fetchWebcastData() {
@@ -643,9 +877,7 @@ ${brandFooter}
       duration,
       bodyHtml,
       sponsorLogo,
-      speakerImage,
-      speakerName,
-      speakerRole,
+      speakers,
       ctaUrl,
       ctaLabel
     } = getWebcastFields();
@@ -653,6 +885,7 @@ ${brandFooter}
     const mainBodyHtml = sections.bodyHtml || bodyHtml || "<p>Webcast description goes here.</p>";
     const takeawaysHtml = sections.takeawaysHtml;
     const fontStack = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
+    const buttonColor = theme.buttonAccent || theme.accent;
 
     const normalizedTime = time
       ? time
@@ -665,25 +898,18 @@ ${brandFooter}
     if (date) metaRows.push({ icon: "&#128197;", text: date });
     if (timeLine) metaRows.push({ icon: "&#128340;", text: timeLine });
 
-    const hasSponsorInBody = /This event is sponsored by/i.test(bodyHtml);
-    const sponsorMarkup = sponsorLogo && !hasSponsorInBody ? `
+    const sponsorMarkup = sponsorLogo ? `
       <tr>
-        <td style="padding:0 40px 28px 40px;font-family:${fontStack};font-size:14px;line-height:1.5;color:#4b5563;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb;border-radius:12px;">
-            <tr>
-              <td style="padding:22px 24px;">
-                <div style="margin:0 0 12px 0;font-size:12px;line-height:1.2;font-weight:700;color:#111827;">This event is sponsored by</div>
-                <img src="${sponsorLogo.replace(/"/g, "&quot;")}" alt="Sponsor logo" style="display:block;max-width:220px;width:100%;height:auto;border:0;">
-              </td>
-            </tr>
-          </table>
+        <td data-webcast-sponsor="true" style="padding:28px 40px 28px 40px;text-align:center;font-family:${fontStack};font-size:14px;line-height:1.5;color:#4b5563;">
+          <div style="margin:0 0 12px 0;font-size:12px;line-height:1.2;font-weight:700;color:#111827;">This event is sponsored by</div>
+          <img src="${sponsorLogo.replace(/"/g, "&quot;")}" alt="Sponsor logo" style="display:block;max-width:220px;width:100%;height:auto;border:0;margin:0 auto;">
         </td>
       </tr>` : "";
 
     const topCtaMarkup = ctaUrl ? `
       <tr>
         <td style="padding:28px 40px 0;text-align:center;">
-          <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:${theme.accent};color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 48px;border-radius:10px;text-decoration:none;box-shadow:0 2px 8px rgba(17,24,39,0.12);">
+          <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:${buttonColor};color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 48px;border-radius:10px;text-decoration:none;box-shadow:0 2px 8px rgba(17,24,39,0.12);">
             ${ctaLabel}
           </a>
         </td>
@@ -703,37 +929,19 @@ ${brandFooter}
         </td>
       </tr>` : "";
 
-    const speakerMarkup = speakerName || speakerImage ? `
+    const speakerMarkup = speakers.length ? `
       <tr>
         <td style="padding:32px 40px 0 40px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #f0f0f0;border-radius:12px;background:#ffffff;">
-            <tr>
-              ${speakerImage ? `<td class="webcast-speaker-image-wrap" width="136" style="padding:24px 0 24px 24px;vertical-align:middle;">
-                <img class="webcast-speaker-image" src="${speakerImage.replace(/"/g, "&quot;")}" alt="${(speakerName || "Speaker").replace(/"/g, "&quot;")}" style="display:block;width:96px;max-width:96px;height:96px;border-radius:14px;border:0;object-fit:cover;">
-              </td>` : ""}
-              <td style="padding:24px;vertical-align:middle;font-family:${fontStack};color:#1f2937;">
-                <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#9ca3af;">Featured Speaker</p>
-                <p style="margin:4px 0 0;font-size:17px;font-weight:700;color:#111827;">${speakerName || ""}</p>
-                <p style="margin:2px 0 0;font-size:13px;color:#6b7280;">${speakerRole || ""}</p>
-              </td>
-            </tr>
-          </table>
+          ${buildSpeakerCardsMarkup(speakers, fontStack)}
         </td>
       </tr>` : "";
 
     const bottomCtaMarkup = ctaUrl ? `
       <tr>
-        <td style="padding:32px 40px 24px 40px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fafb;border-radius:12px;">
-            <tr>
-              <td style="padding:28px 32px;text-align:center;">
-                <p style="margin:0 0 16px 0;font-family:${fontStack};font-size:16px;line-height:1.5;color:#374151;font-weight:600;">Seats are limited. Save yours now.</p>
-                <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:#111827;color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 44px;border-radius:10px;text-decoration:none;">
-                  ${ctaLabel}
-                </a>
-              </td>
-            </tr>
-          </table>
+        <td style="padding:28px 40px 0;text-align:center;">
+          <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:${buttonColor};color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 48px;border-radius:10px;text-decoration:none;box-shadow:0 2px 8px rgba(17,24,39,0.12);">
+            ${ctaLabel}
+          </a>
         </td>
       </tr>` : "";
 
@@ -782,13 +990,13 @@ ${brandFooter}
         ${metaMarkup}
         ${topCtaMarkup}
         <tr>
-          <td style="padding:24px 40px 0;font-family:${fontStack};font-size:15px;line-height:1.7;color:#444444;">
+          <td class="webcast-copy" style="padding:24px 40px 0;font-family:${fontStack};font-size:15px;line-height:1.7;color:#444444;">
             ${mainBodyHtml}
           </td>
         </tr>
+        ${bottomCtaMarkup}
         ${takeawaysMarkup}
         ${speakerMarkup}
-        ${bottomCtaMarkup}
         ${sponsorMarkup}
       </table>
     </td>
@@ -828,6 +1036,29 @@ ${brandFooter}
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Webcast Invite</title>
 <style>
+  .webcast-speaker-card {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+  .webcast-copy img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  .webcast-copy table {
+    max-width: 100% !important;
+  }
+  .webcast-copy td,
+  .webcast-copy th {
+    max-width: 100% !important;
+  }
+  .webcast-copy p,
+  .webcast-copy ul,
+  .webcast-copy ol,
+  .webcast-speaker-copy,
+  .webcast-speaker-copy p {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
   @media only screen and (max-width:600px) {
     .webcast-headline {
       font-size: 24px !important;
@@ -845,11 +1076,27 @@ ${brandFooter}
       display: block !important;
       width: 100% !important;
       padding: 24px 24px 0 24px !important;
+      text-align: center !important;
     }
     .webcast-speaker-image {
       width: 88px !important;
       max-width: 88px !important;
       height: 88px !important;
+      margin: 0 auto !important;
+    }
+    .webcast-speaker-copy {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      text-align: center !important;
+      padding: 16px 20px 24px 20px !important;
+      overflow-wrap: anywhere !important;
+      word-break: break-word !important;
+      white-space: normal !important;
+    }
+    .webcast-copy,
+    .webcast-meta-cell {
+      width: 100% !important;
     }
   }
 </style>
@@ -864,6 +1111,86 @@ ${brandFooter}
 <!-- COBRAND_FOOTER_END -->
 </body>
 </html>`;
+  }
+
+  function isBodySourceMode() {
+    return !bodyEditorSource?.hidden;
+  }
+
+  function syncBodyEditorSourceFromSurface() {
+    if (!bodyEditorSurface || !bodyEditorSource) return;
+    bodyEditorSource.value = bodyEditorSurface.innerHTML.trim();
+  }
+
+  function syncBodyEditorSurfaceFromSource() {
+    if (!bodyEditorSurface || !bodyEditorSource) return;
+    bodyEditorSurface.innerHTML = bodyEditorSource.value.trim();
+  }
+
+  function openBodyEditor() {
+    if (!bodyEditorDialog || !bodyEditorSurface || !bodyEditorSource || !webcastBody) return;
+    const currentHtml = webcastBody.value.trim();
+    bodyEditorSurface.innerHTML = currentHtml || "<p></p>";
+    bodyEditorSource.value = currentHtml;
+    bodyEditorSurface.hidden = false;
+    bodyEditorSource.hidden = true;
+    if (toggleBodySourceBtn) toggleBodySourceBtn.textContent = "Source";
+    bodyEditorDialog.showModal();
+    bodyEditorSurface.focus();
+  }
+
+  function closeBodyEditor() {
+    bodyEditorDialog?.close();
+  }
+
+  function toggleBodySourceMode() {
+    if (!bodyEditorSurface || !bodyEditorSource || !toggleBodySourceBtn) return;
+
+    if (isBodySourceMode()) {
+      syncBodyEditorSurfaceFromSource();
+      bodyEditorSource.hidden = true;
+      bodyEditorSurface.hidden = false;
+      toggleBodySourceBtn.textContent = "Source";
+      bodyEditorSurface.focus();
+      return;
+    }
+
+    syncBodyEditorSourceFromSurface();
+    bodyEditorSurface.hidden = true;
+    bodyEditorSource.hidden = false;
+    toggleBodySourceBtn.textContent = "Visual";
+    bodyEditorSource.focus();
+  }
+
+  function applyBodyEditorChanges() {
+    if (!webcastBody || !bodyEditorSurface || !bodyEditorSource) return;
+
+    if (isBodySourceMode()) {
+      webcastBody.value = bodyEditorSource.value.trim();
+    } else {
+      syncBodyEditorSourceFromSurface();
+      webcastBody.value = bodyEditorSource.value.trim();
+    }
+
+    updatePreview();
+    saveState();
+    closeBodyEditor();
+  }
+
+  function runBodyEditorCommand(action, value = null) {
+    if (!bodyEditorSurface || isBodySourceMode()) return;
+
+    bodyEditorSurface.focus();
+    if (action === "createLink") {
+      const url = window.prompt("Enter a URL");
+      if (!url) return;
+      document.execCommand("createLink", false, url);
+      syncBodyEditorSourceFromSurface();
+      return;
+    }
+
+    document.execCommand(action, false, value);
+    syncBodyEditorSourceFromSurface();
   }
 
   function buildFragmentHtml() {
@@ -1410,7 +1737,10 @@ ${gmailDarkScript}
     if (stealthLinkInput) stealthLinkInput.value = "";
     if (webcastUrlInput) webcastUrlInput.value = "";
     if (webcastJsonInput) webcastJsonInput.value = "";
+    webcastSpeakers = [];
     populateWebcastFields({ eventType: "Webinar" });
+    if (bodyEditorSurface) bodyEditorSurface.innerHTML = "";
+    if (bodyEditorSource) bodyEditorSource.value = "";
     outputStore.html = "";
     codeOutputInner.value = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
@@ -1455,17 +1785,22 @@ ${gmailDarkScript}
 
   copyBtn.addEventListener("click", copyOutput);
   downloadBtn.addEventListener("click", downloadOutput);
-  inputHtml.addEventListener("input", updatePreview);
+  inputHtml.addEventListener("input", () => {
+    updatePreview();
+    saveState();
+  });
   builderModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
     btn.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
       setBuilderMode(btn.dataset.builderMode);
+      saveState();
     });
   });
   brandSelect.addEventListener("change", () => {
     updateTemplateOptionsVisibility();
     updatePreview();
+    saveState();
   });
 
   ["toggleKeepStyles", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveScripts"].forEach(id => {
@@ -1482,12 +1817,47 @@ ${gmailDarkScript}
       try {
         renderStatus("info", "Fetching", "Trying to fetch webcast data from ON24.");
         await fetchWebcastData();
+        saveState();
       } catch (err) {
         console.error(err);
         renderStatus("warn", "Fetch failed", err.message);
       }
     });
   }
+
+  if (openBodyEditorBtn) {
+    openBodyEditorBtn.addEventListener("click", openBodyEditor);
+  }
+
+  if (closeBodyEditorBtn) {
+    closeBodyEditorBtn.addEventListener("click", closeBodyEditor);
+  }
+
+  if (cancelBodyEditorBtn) {
+    cancelBodyEditorBtn.addEventListener("click", closeBodyEditor);
+  }
+
+  if (saveBodyEditorBtn) {
+    saveBodyEditorBtn.addEventListener("click", applyBodyEditorChanges);
+  }
+
+  if (toggleBodySourceBtn) {
+    toggleBodySourceBtn.addEventListener("click", toggleBodySourceMode);
+  }
+
+  if (bodyEditorSurface) {
+    bodyEditorSurface.addEventListener("input", syncBodyEditorSourceFromSurface);
+  }
+
+  if (bodyEditorSource) {
+    bodyEditorSource.addEventListener("input", syncBodyEditorSurfaceFromSource);
+  }
+
+  document.querySelectorAll("[data-editor-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      runBodyEditorCommand(btn.dataset.editorAction, btn.dataset.editorValue || null);
+    });
+  });
 
   if (toggleTemplateOptionsBtn) {
     toggleTemplateOptionsBtn.addEventListener("click", () => {
@@ -1508,6 +1878,7 @@ ${gmailDarkScript}
         }
         updateColorLabels();
         updatePreview();
+        saveState();
       });
       el.addEventListener("change", () => {
         if (el === toggleShowDividers && builderMode === "cleaner") {
@@ -1515,6 +1886,7 @@ ${gmailDarkScript}
         }
         updateColorLabels();
         updatePreview();
+        saveState();
       });
     }
   });
@@ -1523,6 +1895,7 @@ ${gmailDarkScript}
     toggleMatchFooterColor.addEventListener("change", () => {
       syncFooterColorState();
       updatePreview();
+      saveState();
     });
   }
 
@@ -1536,12 +1909,14 @@ ${gmailDarkScript}
     btn.addEventListener("click", () => {
       setViewMode(btn.dataset.previewMode);
       updatePreview();
+      saveState();
     });
   });
 
   outputModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       setOutputMode(btn.dataset.outputMode);
+      saveState();
     });
   });
 
@@ -1592,16 +1967,25 @@ ${gmailDarkScript}
     webcastCtaLabel
   ].forEach(el => {
     if (el) {
-      el.addEventListener("input", updatePreview);
+      el.addEventListener("input", () => {
+        updatePreview();
+        saveState();
+      });
     }
   });
 
   populateBrandOptions();
-  clearAll();
+  const restoredState = restoreState();
+  if (!restoredState) {
+    clearAll();
+    setBuilderMode("cleaner");
+    setOutputMode("fragment");
+    setViewMode("desktop");
+    saveState();
+  } else {
+    updatePreview();
+  }
   updateColorLabels();
   syncFooterColorState();
   updateStealthHelper();
-  setBuilderMode("cleaner");
-  setOutputMode("fragment");
-  setViewMode("desktop");
 });
