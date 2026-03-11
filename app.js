@@ -15,7 +15,7 @@ window.addEventListener("DOMContentLoaded", () => {
             </tr>
             <tr>
               <td align="center" style="font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#4b5563;padding:0 28px 40px;">
-                Use Code fragment for Omeda-ready HTML, or switch to Full branded email to preview it inside the selected template.
+                Paste your HTML to generate a preview here.
               </td>
             </tr>
           </tbody>
@@ -89,6 +89,12 @@ window.addEventListener("DOMContentLoaded", () => {
     matchFooterColor: false,
     showDividers: true
   };
+  const defaultCleanupOptions = {
+    keepStyles: true,
+    removePreview: true,
+    removeTitle: true,
+    removeScripts: true
+  };
 
   function populateBrandOptions() {
     const currentValue = brandSelect.value;
@@ -138,6 +144,18 @@ window.addEventListener("DOMContentLoaded", () => {
     if (toggleShowDividers) toggleShowDividers.checked = defaultTemplateOptions.showDividers;
     syncFooterColorState();
     updatePreview();
+  }
+
+  function resetCleanupOptions() {
+    const keepStylesToggle = document.getElementById("toggleKeepStyles");
+    const removePreviewToggle = document.getElementById("toggleRemovePreview");
+    const removeTitleToggle = document.getElementById("toggleRemoveTitle");
+    const removeScriptsToggle = document.getElementById("toggleRemoveScripts");
+
+    if (keepStylesToggle) keepStylesToggle.checked = defaultCleanupOptions.keepStyles;
+    if (removePreviewToggle) removePreviewToggle.checked = defaultCleanupOptions.removePreview;
+    if (removeTitleToggle) removeTitleToggle.checked = defaultCleanupOptions.removeTitle;
+    if (removeScriptsToggle) removeScriptsToggle.checked = defaultCleanupOptions.removeScripts;
   }
 
   function extractStyleBlocks(html) {
@@ -598,6 +616,10 @@ window.addEventListener("DOMContentLoaded", () => {
       footerBg: footerBgColor?.value || "",
       matchFooterColor: !!toggleMatchFooterColor?.checked,
       showDividers: !!toggleShowDividers?.checked,
+      keepStyles: !!document.getElementById("toggleKeepStyles")?.checked,
+      removePreview: !!document.getElementById("toggleRemovePreview")?.checked,
+      removeTitle: !!document.getElementById("toggleRemoveTitle")?.checked,
+      removeScripts: !!document.getElementById("toggleRemoveScripts")?.checked,
       templateOptionsOpen
     };
 
@@ -625,14 +647,26 @@ window.addEventListener("DOMContentLoaded", () => {
       if (typeof state.footerBg === "string" && footerBgColor) footerBgColor.value = state.footerBg;
       if (toggleMatchFooterColor) toggleMatchFooterColor.checked = !!state.matchFooterColor;
       if (toggleShowDividers) toggleShowDividers.checked = !!state.showDividers;
+      if (document.getElementById("toggleKeepStyles")) {
+        document.getElementById("toggleKeepStyles").checked = state.keepStyles ?? defaultCleanupOptions.keepStyles;
+      }
+      if (document.getElementById("toggleRemovePreview")) {
+        document.getElementById("toggleRemovePreview").checked = state.removePreview ?? defaultCleanupOptions.removePreview;
+      }
+      if (document.getElementById("toggleRemoveTitle")) {
+        document.getElementById("toggleRemoveTitle").checked = state.removeTitle ?? defaultCleanupOptions.removeTitle;
+      }
+      if (document.getElementById("toggleRemoveScripts")) {
+        document.getElementById("toggleRemoveScripts").checked = state.removeScripts ?? defaultCleanupOptions.removeScripts;
+      }
       lastCleanerShowDividers = !!state.showDividers;
-      lastCleanerOutputMode = "full";
+      lastCleanerOutputMode = state.outputMode === "fragment" ? "fragment" : "full";
       templateOptionsOpen = !!state.templateOptionsOpen;
 
       syncFooterColorState();
       updateColorLabels();
       setBuilderMode("cleaner");
-      setOutputMode("full");
+      setOutputMode(lastCleanerOutputMode);
       setViewMode(["desktop", "mobile", "code", "dark"].includes(state.previewMode) ? state.previewMode : "desktop");
       isRestoringState = false;
       return true;
@@ -790,9 +824,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     const headMarkup = preservedHeadMarkup ? `${preservedHeadMarkup}\n` : "\n";
-    const preserveLightSurfaceBrands = new Set(["thinkadvisor", "hrexecutive", "districtadministration", "universitybusiness"]);
     const preserveDefaultSurface =
-      preserveLightSurfaceBrands.has(brand.id) &&
       (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
       (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
     const brandOptions = {
@@ -972,9 +1004,7 @@ ${brandFooter}
       return "";
     }
 
-    const preserveLightSurfaceBrands = new Set(["thinkadvisor", "hrexecutive", "districtadministration", "universitybusiness"]);
     const preserveDefaultSurface =
-      preserveLightSurfaceBrands.has(brand.id) &&
       (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
       (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
     const brandOptions = {
@@ -1443,6 +1473,10 @@ ${gmailDarkScript}
       btn.classList.toggle("active", btn.dataset.outputMode === mode);
     });
 
+    document.querySelectorAll("[data-mode-help]").forEach(el => {
+      el.hidden = el.getAttribute("data-mode-help") !== mode;
+    });
+
     appEl.classList.toggle("is-fragment", mode === "fragment");
     updateActionButtons();
     updateTemplateOptionsVisibility();
@@ -1566,6 +1600,10 @@ ${gmailDarkScript}
     codeOutputInner.value = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
     templateOptionsOpen = false;
+    setOutputMode("full");
+    setViewMode("desktop");
+    resetTemplateOptions();
+    resetCleanupOptions();
 
     previewFrame.srcdoc = `
       <html>
@@ -1624,7 +1662,12 @@ ${gmailDarkScript}
 
   ["toggleKeepStyles", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveScripts"].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener("change", updatePreview);
+    if (el) {
+      el.addEventListener("change", () => {
+        updatePreview();
+        saveState();
+      });
+    }
   });
 
   if (clearInputBtn) {

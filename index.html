@@ -28,8 +28,9 @@
       <button id="resetBtn" class="btn btn-subtle" type="button">
         <span class="btn-icon" aria-hidden="true">
           <svg viewBox="0 0 20 20" fill="none">
-            <path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6"></path>
-            <path d="M13 2.5h3.5V6"></path>
+            <path d="M16 10a6 6 0 1 1-2.1-4.6"></path>
+            <path d="M12 3h4v4"></path>
+            <path d="m16 3-4 4"></path>
           </svg>
         </span>
         <span class="btn-label">Reset</span>
@@ -59,9 +60,12 @@
   <main class="workspace">
     <aside class="sidebar">
 <section class="sidebar-section" id="outputTypeSection">
-  <h2>Output Type</h2>
-  <p>Choose the type of HTML you need.</p>
-  <p class="mode-help"><strong>Full branded email</strong> uses your pasted HTML as the main content, then adds the selected brand header and footer around it.</p>
+  <div class="step-title">
+    <span class="step-badge" aria-hidden="true">1</span>
+    <h2>Output Type</h2>
+  </div>
+  <p class="mode-help" data-mode-help="full"><strong>Full branded email</strong> uses your pasted HTML as the main content, then adds the selected brand header and footer around it.</p>
+  <p class="mode-help mode-help-secondary" data-mode-help="fragment" hidden><strong>Code fragment</strong> keeps only the cleaned content block, without the brand wrapper, for Omeda-ready or ESP fragment use.</p>
 
 <div class="mode-switch" id="outputModeSwitch">
   <button class="switch-btn active" data-output-mode="full" type="button">Full branded email</button>
@@ -71,7 +75,10 @@
 
 <section class="sidebar-section">
   <div class="section-head section-head-actions">
-    <h2>HTML Input</h2>
+    <div class="step-title">
+      <span class="step-badge" aria-hidden="true">2</span>
+      <h2>HTML Input</h2>
+    </div>
     <button id="clearInputBtn" class="btn btn-subtle btn-small" type="button">
       <span class="btn-label">Clear code</span>
     </button>
@@ -99,22 +106,25 @@
 </section>
 
 <section class="sidebar-section" id="brandSection">
-  <h2>Brand Template</h2>
+  <div class="step-title">
+    <span class="step-badge" aria-hidden="true">3</span>
+    <h2>Brand Template</h2>
+  </div>
   <p id="brandHelperText">Required for full branded email.</p>
-  <select id="brandSelect" class="select">
-    <option value="">Choose a brand…</option>
-  </select>
-
-      <button id="toggleTemplateOptionsBtn" class="btn btn-subtle btn-small template-toggle" type="button" hidden aria-expanded="false">
-    <span class="btn-icon" aria-hidden="true">
+  <div class="select-shell">
+    <select id="brandSelect" class="select">
+      <option value="">Choose a brand…</option>
+    </select>
+    <span class="dropdown-icon" aria-hidden="true">
       <svg viewBox="0 0 20 20" fill="none">
-        <path d="m12.5 4.5 3 3"></path>
-        <path d="M4.5 15.5 6 11l7-7 3 3-7 7z"></path>
-        <path d="M4.5 15.5 8 15"></path>
+        <path d="m6 8 4 4 4-4"></path>
       </svg>
     </span>
+  </div>
+
+      <button id="toggleTemplateOptionsBtn" class="template-toggle" type="button" hidden aria-expanded="false">
     <span class="btn-label">Edit template styles</span>
-    <span class="disclosure-icon" aria-hidden="true">
+    <span class="toggle-arrow" aria-hidden="true">
       <svg viewBox="0 0 20 20" fill="none">
         <path d="m6 8 4 4 4-4"></path>
       </svg>
@@ -173,64 +183,79 @@
   </div>
 </section>
 
-<section class="sidebar-section">
-  <div class="section-title">
-    <span class="section-icon" aria-hidden="true">
-      <svg viewBox="0 0 20 20" fill="none">
-        <path d="M4 5.5h12"></path>
-        <path d="M4 10h12"></path>
-        <path d="M4 14.5h12"></path>
-      </svg>
-    </span>
-    <h2>Tracking</h2>
-  </div>
-  <p>Add tracking only if you need it.</p>
-
-  <details class="advanced-options">
-    <summary>
-      <span>Review tracking settings</span>
-      <span class="disclosure-icon" aria-hidden="true">
-        <svg viewBox="0 0 20 20" fill="none">
-          <path d="m6 8 4 4 4-4"></path>
-        </svg>
-      </span>
-    </summary>
-    <p class="helper-note">If a supported brand is selected and the stealth link field is blank, the tool will use that brand’s default stealth link automatically.</p>
-
-    <label class="stacked-field" for="adIdInput">
-      <span class="field-label">Ad ID</span>
-      <input id="adIdInput" class="text-input" type="text" inputmode="numeric" placeholder="Example: 1696">
-    </label>
-
-    <label class="stacked-field" for="stealthLinkInput">
-      <span class="field-label">Stealth link</span>
-      <input id="stealthLinkInput" class="text-input" type="url" placeholder="Optional brand stealth URL">
-    </label>
-
-    <p id="stealthHelperText" class="helper-note compact-note">No default stealth link is available for the current selection.</p>
-  </details>
-</section>
+      <section class="sidebar-section qa-section">
+        <div class="section-head">
+          <div class="step-title">
+            <span class="step-badge" aria-hidden="true">4</span>
+            <h2>QA Checks</h2>
+          </div>
+          <span id="qaCount" class="qa-pill">0 issues</span>
+        </div>
+        <div id="qaReport" class="qa-list">
+          <div class="qa-item ok">
+            <div class="qa-title">Checks will appear here</div>
+            <div class="qa-text">Once output is generated, this panel will flag email compatibility and size issues.</div>
+          </div>
+        </div>
+      </section>
 
       <section class="sidebar-section">
         <div class="section-title">
-          <span class="section-icon" aria-hidden="true">
-            <svg viewBox="0 0 20 20" fill="none">
-              <path d="m9.5 2.5 1.2 3.4 3.3 1.2-3.3 1.2-1.2 3.4-1.2-3.4-3.3-1.2 3.3-1.2z"></path>
-              <path d="m14.5 10.5.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"></path>
-            </svg>
-          </span>
-          <h2>Advanced Cleanup</h2>
+          <h2>Advanced</h2>
         </div>
+        <p>Optional controls for tracking and fragment-specific cleanup.</p>
+
         <details class="advanced-options">
           <summary>
-            <span>Review cleanup settings</span>
-            <span class="disclosure-icon" aria-hidden="true">
+            <span class="summary-title">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path d="M4 5.5h12"></path>
+                  <path d="M4 10h12"></path>
+                  <path d="M4 14.5h12"></path>
+                </svg>
+              </span>
+              <span>Ad Tracking and Stealth Links</span>
+            </span>
+            <span class="toggle-arrow" aria-hidden="true">
               <svg viewBox="0 0 20 20" fill="none">
                 <path d="m6 8 4 4 4-4"></path>
               </svg>
             </span>
           </summary>
-          <p class="helper-note">For most cleanups, leave these on. Turn one off only if the original email loses styling or content you want to keep.</p>
+          <p class="helper-note">If a supported brand is selected and the stealth link field is blank, the tool will use that brand’s default stealth link automatically.</p>
+
+          <label class="stacked-field" for="adIdInput">
+            <span class="field-label">Ad ID</span>
+            <input id="adIdInput" class="text-input" type="text" inputmode="numeric" placeholder="Example: 1696">
+          </label>
+
+          <label class="stacked-field" for="stealthLinkInput">
+            <span class="field-label">Stealth link</span>
+            <input id="stealthLinkInput" class="text-input" type="url" placeholder="Optional brand stealth URL">
+          </label>
+
+          <p id="stealthHelperText" class="helper-note compact-note">No default stealth link is available for the current selection.</p>
+        </details>
+
+        <details class="advanced-options advanced-options-nested">
+          <summary>
+            <span class="summary-title">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path d="m9.5 2.5 1.2 3.4 3.3 1.2-3.3 1.2-1.2 3.4-1.2-3.4-3.3-1.2 3.3-1.2z"></path>
+                  <path d="m14.5 10.5.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"></path>
+                </svg>
+              </span>
+              <span>Code Fragment Cleaning</span>
+            </span>
+            <span class="toggle-arrow" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none">
+                <path d="m6 8 4 4 4-4"></path>
+              </svg>
+            </span>
+          </summary>
+          <p class="helper-note">Best used for Code fragment mode. Full branded email mode typically does not need these adjusted.</p>
 
 <label class="toggle-card">
   <input id="toggleKeepStyles" type="checkbox" checked>
@@ -268,19 +293,6 @@
   </span>
 </label>
         </details>
-      </section>
-
-      <section class="sidebar-section qa-section">
-        <div class="section-head">
-          <h2>QA Checks</h2>
-          <span id="qaCount" class="qa-pill">0 issues</span>
-        </div>
-        <div id="qaReport" class="qa-list">
-          <div class="qa-item ok">
-            <div class="qa-title">Checks will appear here</div>
-            <div class="qa-text">Once output is generated, this panel will flag email compatibility and size issues.</div>
-          </div>
-        </div>
       </section>
     </aside>
 
