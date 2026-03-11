@@ -519,6 +519,10 @@ textarea{
   margin:0;
 }
 
+.advanced-options.is-disabled .helper-note{
+  color:#98a2b3;
+}
+
 .advanced-options .toggle-card + .toggle-card{
   margin-top:10px;
 }
@@ -783,6 +787,28 @@ textarea{
 
 .toggle-card input:checked + .toggle-ui::after{
   left:20px;
+}
+
+.advanced-options.is-disabled .toggle-card{
+  opacity:.62;
+}
+
+.toggle-card input:disabled + .toggle-ui{
+  background:#e4e7ec;
+}
+
+.toggle-card input:disabled + .toggle-ui::after{
+  left:2px;
+  background:#ffffff;
+  box-shadow:0 1px 2px rgba(16,24,40,.12);
+}
+
+.toggle-card input:disabled ~ .toggle-copy strong{
+  color:#98a2b3;
+}
+
+.toggle-card input:disabled ~ .toggle-copy small{
+  color:#98a2b3;
 }
 
 .toggle-copy strong{

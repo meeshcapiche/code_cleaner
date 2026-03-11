@@ -95,6 +95,7 @@ window.addEventListener("DOMContentLoaded", () => {
     removeTitle: true,
     removeScripts: true
   };
+  const cleanupToggleIds = ["toggleKeepStyles", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveScripts"];
 
   function populateBrandOptions() {
     const currentValue = brandSelect.value;
@@ -768,10 +769,26 @@ window.addEventListener("DOMContentLoaded", () => {
     updateStealthHelper();
   }
 
-  function getProcessedClientContent() {
+  function updateCleanupOptionsAvailability() {
+    const cleanupDetails = document.getElementById("toggleKeepStyles")?.closest(".advanced-options");
+    const fragmentCleanupEnabled = outputMode === "fragment";
+
+    cleanupToggleIds.forEach(id => {
+      const toggle = document.getElementById(id);
+      if (toggle) toggle.disabled = !fragmentCleanupEnabled;
+    });
+
+    if (cleanupDetails) {
+      cleanupDetails.classList.toggle("is-disabled", !fragmentCleanupEnabled);
+      cleanupDetails.setAttribute("aria-disabled", String(!fragmentCleanupEnabled));
+    }
+  }
+
+  function getProcessedClientContent(options = {}) {
     let client = inputHtml.value.trim();
-    const keepStyles = document.getElementById("toggleKeepStyles")?.checked;
-    const removeScriptsEnabled = document.getElementById("toggleRemoveScripts")?.checked;
+    const applyFragmentCleanup = options.applyFragmentCleanup ?? (outputMode === "fragment");
+    const keepStyles = applyFragmentCleanup ? document.getElementById("toggleKeepStyles")?.checked : true;
+    const removeScriptsEnabled = applyFragmentCleanup && document.getElementById("toggleRemoveScripts")?.checked;
 
     if (!client) {
       client = sampleClientHtml.trim();
@@ -782,7 +799,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const sourceHead = extractHeadHtml(client);
     const sourceBodyAttrs = extractBodyOpenTag(client);
 
-    if (document.getElementById("toggleRemoveTitle")?.checked) {
+    if (applyFragmentCleanup && document.getElementById("toggleRemoveTitle")?.checked) {
       client = removeTitleTag(client);
     }
 
@@ -803,7 +820,7 @@ window.addEventListener("DOMContentLoaded", () => {
       client = client.replace(/<style\b[\s\S]*?<\/style>\s*/gi, "");
     }
 
-    if (document.getElementById("toggleRemovePreview")?.checked) {
+    if (applyFragmentCleanup && document.getElementById("toggleRemovePreview")?.checked) {
       client = removeClientPreheader(client);
     }
 
@@ -817,7 +834,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function buildFullEmailHtml() {
     const brandKey = brandSelect.value;
     const brand = brandPresets[brandKey];
-    const { clientHtml, preservedHeadMarkup, bodyAttributes } = getProcessedClientContent();
+    const { clientHtml, preservedHeadMarkup, bodyAttributes } = getProcessedClientContent({ applyFragmentCleanup: false });
 
     if (!brand) {
       return "";
@@ -1104,7 +1121,7 @@ ${brandFooter}
   }
 
   function buildFragmentHtml() {
-    const { clientHtml, preservedHeadMarkup } = getProcessedClientContent();
+    const { clientHtml, preservedHeadMarkup } = getProcessedClientContent({ applyFragmentCleanup: true });
     const trackingMarkup = buildTrackingMarkup();
     const contentMarkup = trackingMarkup ? `${trackingMarkup}\n${clientHtml}` : clientHtml;
     return preservedHeadMarkup ? `${preservedHeadMarkup}\n${contentMarkup}`.trim() : contentMarkup;
@@ -1478,6 +1495,7 @@ ${gmailDarkScript}
     });
 
     appEl.classList.toggle("is-fragment", mode === "fragment");
+    updateCleanupOptionsAvailability();
     updateActionButtons();
     updateTemplateOptionsVisibility();
     updatePreview();
@@ -1660,7 +1678,7 @@ ${gmailDarkScript}
     saveState();
   });
 
-  ["toggleKeepStyles", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveScripts"].forEach(id => {
+  cleanupToggleIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener("change", () => {
@@ -1776,6 +1794,7 @@ ${gmailDarkScript}
   } else {
     updatePreview();
   }
+  updateCleanupOptionsAvailability();
   updateColorLabels();
   syncFooterColorState();
   updateStealthHelper();
