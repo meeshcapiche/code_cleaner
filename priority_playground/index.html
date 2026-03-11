@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Priority Playground</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brandlockup">
+        <div class="brandicon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M4 14.5 10 4l6 10.5"></path>
+            <path d="M6.5 10.5h7"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>Priority Playground</h1>
+          <p>Task triage with a little sparkle</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="helpBtn" class="btn btn-subtle" type="button">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="7"></circle>
+              <path d="M8.85 7.75a1.75 1.75 0 1 1 2.44 1.61c-.77.34-1.29.86-1.29 1.64v.25"></path>
+              <path d="M10 14h.01"></path>
+            </svg>
+          </span>
+          <span class="btn-label">Help</span>
+        </button>
+        <button id="resetBtn" class="btn btn-subtle" type="button">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="M16 10a6 6 0 1 1-1.76-4.24"></path>
+              <path d="M16 4v4h-4"></path>
+              <path d="M16 8 13.5 5.5"></path>
+            </svg>
+          </span>
+          <span class="btn-label">Reset</span>
+        </button>
+        <button id="sampleBtn" class="btn primary" type="button">
+          <span class="btn-label">Load Sample</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <section class="sidebar-section">
+          <div class="step-title">
+            <span class="step-badge" aria-hidden="true">1</span>
+            <h2>What needs to get done today?</h2>
+          </div>
+          <div class="dropwrap">
+            <textarea id="taskInput" class="inputbox" spellcheck="false" placeholder="One task per line&#10;&#10;Finalize webinar email&#10;Review sponsor creative&#10;Share campaign results"></textarea>
+          </div>
+          <div class="input-actions">
+            <button id="cleanListBtn" class="btn btn-subtle btn-small" type="button">Brain dump → clean list</button>
+          </div>
+          <div class="tiny-note">Saved in this browser until you hit Reset.</div>
+        </section>
+
+        <section class="sidebar-section">
+          <div class="step-title">
+            <span class="step-badge" aria-hidden="true">2</span>
+            <h2>Today energy</h2>
+          </div>
+          <div class="energy-control">
+            <div class="energy-scale">
+              <span>Low energy</span>
+              <strong id="energyModeLabel">Balanced</strong>
+              <span>High focus</span>
+            </div>
+            <input id="energySlider" class="energy-slider" type="range" min="0" max="100" step="1" value="45" aria-label="Today energy">
+          </div>
+          <div class="tiny-note">Slide left for lighter tasks, right for deeper focus.</div>
+        </section>
+      </aside>
+
+      <section class="mainpanel">
+        <div class="preview-toolbar">
+          <div class="toolbar-copy">
+            <h2>What should I do right now?</h2>
+            <p>We’ll bring the best next moves to the top.</p>
+          </div>
+        </div>
+
+        <div class="results-shell">
+          <section class="summary-strip" id="summaryStrip">
+            <article class="summary-card">
+              <span class="summary-label">Completed</span>
+              <strong id="summaryDone">0</strong>
+            </article>
+            <article class="summary-card momentum-card">
+              <div class="momentum-head">
+                <span class="summary-label">Momentum today</span>
+                <strong id="momentumCount">0/3</strong>
+              </div>
+              <div class="momentum-meter" aria-hidden="true">
+                <span id="momentumFill" class="momentum-fill"></span>
+              </div>
+            </article>
+          </section>
+
+          <section class="result-section">
+            <div class="section-head">
+              <div>
+                <h3>Tasks</h3>
+                <p class="section-helper">The top group is the recommendation. Everything else stays organized below.</p>
+              </div>
+            </div>
+            <div id="resultList" class="result-list">
+              <div class="empty-state">
+                Your task groups will appear here.
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <input id="roleSelect" type="hidden" value="general">
+  <input id="deadlineSelect" type="hidden" value="medium">
+  <input id="impactSelect" type="hidden" value="stakeholders">
+  <input id="effortSelect" type="hidden" value="balanced">
+  <input id="dependencySelect" type="hidden" value="medium">
+  <div id="confettiLayer" class="confetti-layer" aria-hidden="true"></div>
+
+  <dialog id="helpDialog" class="editor-dialog help-dialog">
+    <div class="editor-dialog-card help-dialog-card">
+      <div class="editor-dialog-head">
+        <div>
+          <h2>About Priority Playground</h2>
+          <p>A lightweight prioritization assistant for non-technical teams.</p>
+        </div>
+        <button id="closeHelpBtn" class="btn btn-subtle btn-small" type="button">Close</button>
+      </div>
+
+      <div class="help-doc">
+        <section class="help-block">
+          <h3>What it does</h3>
+          <p>Priority Playground helps someone take a long task list and turn it into a more realistic next step based on urgency, impact, effort, and momentum.</p>
+        </section>
+
+        <section class="help-block">
+          <h3>How it works</h3>
+          <ul class="help-list">
+            <li>Paste one task per line.</li>
+            <li>Set your energy for the day.</li>
+            <li>The app quietly sorts the list and brings the best next tasks to the top, while still letting you override it fast.</li>
+          </ul>
+        </section>
+
+        <section class="help-block">
+          <h3>When to use it</h3>
+          <ul class="help-list">
+            <li>When a marketer has too many campaigns and requests competing for attention.</li>
+            <li>When a sales team needs to sort follow-up work, outreach, and deal tasks.</li>
+            <li>When an ops or leadership team needs a clearer “do now versus do later” view.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>
