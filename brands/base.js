@@ -18,6 +18,41 @@ function applyBrandOptions(template, options) {
     .replace(/__FOOTER_DIVIDER__/g, options.showDividers ? buildDividerMarkup(options.footerDivider) : "");
 }
 
+function cloneMatcher(matcher) {
+  return new RegExp(matcher.source, matcher.flags.replace(/g/g, ""));
+}
+
+function removeMatchedWrapper(container, matcher) {
+  const scopedMatcher = cloneMatcher(matcher);
+  const candidates = Array.from(container.querySelectorAll("table, div, section, article, tr, td"))
+    .filter(node => scopedMatcher.test(node.outerHTML))
+    .sort((a, b) => a.outerHTML.length - b.outerHTML.length);
+
+  const target = candidates[0];
+  if (target) {
+    target.remove();
+    return true;
+  }
+
+  return false;
+}
+
+function pruneEmptyWrappers(container) {
+  let removed = true;
+
+  while (removed) {
+    removed = false;
+    Array.from(container.querySelectorAll("table, div, section, article, tr, td")).forEach(node => {
+      const hasStructuredChild = node.querySelector("table, img, a, p, div, section, article");
+      const text = (node.textContent || "").replace(/\u00a0/g, " ").trim();
+      if (!hasStructuredChild && !text) {
+        node.remove();
+        removed = true;
+      }
+    });
+  }
+}
+
 export function createBrand(config) {
   const {
     id,
@@ -60,11 +95,20 @@ export function createBrand(config) {
       cleaned = cleaned.replace(/<!--\s*COBRAND_HEADER_START\s*-->[\s\S]*?<!--\s*COBRAND_HEADER_END\s*-->\s*/gi, "");
       cleaned = cleaned.replace(/<!--\s*COBRAND_FOOTER_START\s*-->[\s\S]*?<!--\s*COBRAND_FOOTER_END\s*-->\s*/gi, "");
 
+      const container = document.createElement("div");
+      container.innerHTML = cleaned;
+
       for (const matcher of matchers) {
-        cleaned = cleaned.replace(matcher, "");
+        const removed = removeMatchedWrapper(container, matcher);
+        if (!removed) {
+          cleaned = cleaned.replace(matcher, "");
+          container.innerHTML = cleaned;
+        }
       }
 
-      return cleaned;
+      pruneEmptyWrappers(container);
+
+      return container.innerHTML || cleaned;
     }
   };
 }

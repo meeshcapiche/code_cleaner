@@ -8,7 +8,8 @@ export const districtadministration = createBrand({
     shared: { color: "#d7d7d7", width: 1 }
   },
   matchers: [
-    /<table[^>]*>\s*[\s\S]*?(District_Administration_Logo_full_color\.png|District Administration)[\s\S]*?confirmunsubscribelink[\s\S]*?<\/table>\s*/gi
+    /<table[^>]*>\s*[\s\S]*?(View in browser|mv_online_version)[\s\S]*?(District Administration Logo|District_Administration_Logo_full_color\.png)[\s\S]*?<\/table>\s*/gi,
+    /<table[^>]*>\s*[\s\S]*?(Manage My Subscriptions|preferencepagelink)[\s\S]*?(One Click Unsubscribe|confirmunsubscribelink)[\s\S]*?<\/table>\s*/gi
   ],
   header: `
 <table __HEADER_DARK_ATTR__ role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">

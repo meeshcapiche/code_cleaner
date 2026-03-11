@@ -25,6 +25,16 @@
     </div>
 
     <div class="topbar-actions">
+      <button id="helpBtn" class="btn btn-subtle" type="button">
+        <span class="btn-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="7"></circle>
+            <path d="M8.85 7.75a1.75 1.75 0 1 1 2.44 1.61c-.77.34-1.29.86-1.29 1.64v.25"></path>
+            <path d="M10 14h.01"></path>
+          </svg>
+        </span>
+        <span class="btn-label">Help</span>
+      </button>
       <button id="resetBtn" class="btn btn-subtle" type="button">
         <span class="btn-icon" aria-hidden="true">
           <svg viewBox="0 0 20 20" fill="none">
@@ -206,6 +216,15 @@
         </div>
         <p>Optional controls for tracking and fragment-specific cleanup.</p>
 
+        <label class="toggle-card toggle-card-compact">
+          <input id="toggleLiteralFullEmail" type="checkbox">
+          <span class="toggle-ui"></span>
+          <span class="toggle-copy">
+            <strong>Preserve full export layout</strong>
+            <small>For full-document exports like Stripo, keep more of the original document structure when building full email output.</small>
+          </span>
+        </label>
+
         <details class="advanced-options">
           <summary>
             <span class="summary-title">
@@ -341,6 +360,7 @@
 
     <div class="toolbar-status">
       <span id="statusPill" class="status-pill">Ready</span>
+      <span id="emailSizePill" class="status-pill size">0 KB</span>
       <div id="statusMessage" class="status-card">
         Paste client HTML to begin.
       </div>
@@ -359,6 +379,120 @@
 </section>
   </main>
 </div>
+
+<dialog id="helpDialog" class="editor-dialog help-dialog">
+  <div class="editor-dialog-card help-dialog-card">
+    <div class="editor-dialog-head">
+      <div>
+        <h2>About This Tool</h2>
+        <p>Maintained by Michelle Kuseske</p>
+      </div>
+      <button id="closeHelpBtn" class="btn btn-subtle btn-small" type="button">Close</button>
+    </div>
+
+    <div class="help-doc">
+      <div class="help-meta">Last updated: March 11, 2026</div>
+
+      <section class="help-block">
+        <h3>What this tool does</h3>
+        <p>This tool helps convert raw email HTML into ready-to-use branded marketing output.</p>
+        <p>Instead of manually editing code, you can paste HTML from a vendor, partner, or content hub and the tool will quickly convert it into either:</p>
+        <ul class="help-list">
+          <li>a fully branded email, or</li>
+          <li>a clean content fragment for use inside another email template.</li>
+        </ul>
+        <p>The tool keeps most of the original content structure intact while applying brand structure, improving stability, and checking for common email issues.</p>
+      </section>
+
+      <section class="help-block">
+        <h3>Output modes</h3>
+        <h4>Full branded email</h4>
+        <p>Use this when you want a complete email with the correct brand header and footer automatically applied.</p>
+        <p>In this mode the tool:</p>
+        <ul class="help-list">
+          <li>Preserves most of the HTML you paste</li>
+          <li>Inserts the selected brand header and footer</li>
+          <li>Applies standardized brand wrapping used across supported publications</li>
+          <li>Makes small structural adjustments that help emails render more reliably</li>
+          <li>Runs QA checks to catch common email issues</li>
+        </ul>
+        <p>This is the most common workflow and is typically used when preparing full marketing emails or sponsored sends.</p>
+        <h4>Code fragment</h4>
+        <p>Use this when you only need the content block, not a full email.</p>
+        <p>Fragment mode:</p>
+        <ul class="help-list">
+          <li>Cleans up the pasted HTML</li>
+          <li>Removes unnecessary or unsupported code</li>
+          <li>Outputs only the content section</li>
+        </ul>
+        <p>Fragments cannot be sent on their own. They must be inserted into another email template, such as a template built in the Omeda Email Designer.</p>
+      </section>
+
+      <section class="help-block">
+        <h3>Typical workflow</h3>
+        <ol class="help-list">
+          <li>Paste HTML into the input area or drag in an `.html` file.</li>
+          <li>Choose your output mode:
+            <ul class="help-list">
+              <li>Full branded email for a complete email</li>
+              <li>Code fragment for content used inside another template</li>
+            </ul>
+          </li>
+          <li>Select a brand when building a full email.</li>
+          <li>Review the preview using Desktop, Mobile, Code, and Dark mode.</li>
+          <li>Check any QA warnings.</li>
+          <li>Copy or export the finished HTML.</li>
+        </ol>
+      </section>
+
+      <section class="help-block">
+        <h3>What the preview shows</h3>
+        <p>The preview lets you quickly check how the email will appear before exporting.</p>
+        <p>You can switch between:</p>
+        <ul class="help-list">
+          <li>Desktop view</li>
+          <li>Mobile view</li>
+          <li>Dark mode</li>
+          <li>Code view</li>
+        </ul>
+        <p>This helps catch layout issues early, before the email is copied into another system.</p>
+      </section>
+
+      <section class="help-block">
+        <h3>QA checks</h3>
+        <p>Before exporting, the tool scans the HTML for common email risks such as:</p>
+        <ul class="help-list">
+          <li>oversized email files</li>
+          <li>unsupported or risky HTML</li>
+          <li>Outlook rendering issues</li>
+          <li>formatting problems that could break layouts</li>
+        </ul>
+        <p>These warnings help flag likely issues early, but they do not replace final review.</p>
+      </section>
+
+      <section class="help-block">
+        <h3>Advanced tools</h3>
+        <p>The Advanced section includes optional settings for:</p>
+        <ul class="help-list">
+          <li>ad tracking inputs</li>
+          <li>stealth links</li>
+          <li>additional code cleanup</li>
+        </ul>
+        <p>These tools are available for more complex workflows but are separate from the default branded-email process so they don’t accidentally affect normal production.</p>
+      </section>
+
+      <section class="help-block">
+        <h3>Helpful tips</h3>
+        <ul class="help-list">
+          <li>Most workflows should use Full branded email mode.</li>
+          <li>Use Code fragment only when inserting content into an existing email template.</li>
+          <li>Always check mobile and dark mode previews before exporting.</li>
+          <li>QA warnings highlight potential issues but final review is still recommended.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</dialog>
 
 </body>
 </html>

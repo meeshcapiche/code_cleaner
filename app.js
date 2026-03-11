@@ -32,7 +32,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const qaReport = document.getElementById("qaReport");
   const qaCount = document.getElementById("qaCount");
   const statusPill = document.getElementById("statusPill");
+  const emailSizePill = document.getElementById("emailSizePill");
   const statusMessage = document.getElementById("statusMessage");
+  const helpBtn = document.getElementById("helpBtn");
+  const helpDialog = document.getElementById("helpDialog");
+  const closeHelpBtn = document.getElementById("closeHelpBtn");
   const brandSelect = document.getElementById("brandSelect");
   const brandHelperText = document.getElementById("brandHelperText");
   const toggleTemplateOptionsBtn = document.getElementById("toggleTemplateOptionsBtn");
@@ -44,6 +48,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const footerBgValue = document.getElementById("footerBgValue");
   const toggleMatchFooterColor = document.getElementById("toggleMatchFooterColor");
   const toggleShowDividers = document.getElementById("toggleShowDividers");
+  const toggleLiteralFullEmail = document.getElementById("toggleLiteralFullEmail");
   const adIdInput = document.getElementById("adIdInput");
   const stealthLinkInput = document.getElementById("stealthLinkInput");
   const stealthHelperText = document.getElementById("stealthHelperText");
@@ -177,6 +182,16 @@ window.addEventListener("DOMContentLoaded", () => {
   function extractBodyOpenTag(html) {
     const match = (html || "").match(/<body\b([^>]*)>/i);
     return match ? match[1] || "" : "";
+  }
+
+  function extractHtmlOpenTag(html) {
+    const match = (html || "").match(/<html\b([^>]*)>/i);
+    return match ? match[1] || "" : "";
+  }
+
+  function extractBodyInnerHtml(html) {
+    const match = (html || "").match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+    return match ? match[1] : stripOuterDocument(html);
   }
 
   function extractPreservableHeadMarkup(headHtml) {
@@ -617,6 +632,7 @@ window.addEventListener("DOMContentLoaded", () => {
       footerBg: footerBgColor?.value || "",
       matchFooterColor: !!toggleMatchFooterColor?.checked,
       showDividers: !!toggleShowDividers?.checked,
+      literalFullEmail: !!toggleLiteralFullEmail?.checked,
       keepStyles: !!document.getElementById("toggleKeepStyles")?.checked,
       removePreview: !!document.getElementById("toggleRemovePreview")?.checked,
       removeTitle: !!document.getElementById("toggleRemoveTitle")?.checked,
@@ -648,6 +664,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (typeof state.footerBg === "string" && footerBgColor) footerBgColor.value = state.footerBg;
       if (toggleMatchFooterColor) toggleMatchFooterColor.checked = !!state.matchFooterColor;
       if (toggleShowDividers) toggleShowDividers.checked = !!state.showDividers;
+      if (toggleLiteralFullEmail) toggleLiteralFullEmail.checked = !!state.literalFullEmail;
       if (document.getElementById("toggleKeepStyles")) {
         document.getElementById("toggleKeepStyles").checked = state.keepStyles ?? defaultCleanupOptions.keepStyles;
       }
@@ -739,6 +756,25 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function getHtmlSizeBytes(html) {
+    return new TextEncoder().encode(html || "").length;
+  }
+
+  function formatHtmlSize(bytes) {
+    if (!bytes) return "0 KB";
+    return bytes < 1024
+      ? `${bytes} B`
+      : `${(bytes / 1024).toFixed(bytes >= 10 * 1024 ? 0 : 1)} KB`;
+  }
+
+  function renderEmailSize(bytes) {
+    if (!emailSizePill) return;
+
+    const level = bytes >= 90 * 1024 ? "warn" : "size";
+    emailSizePill.textContent = formatHtmlSize(bytes);
+    emailSizePill.className = `status-pill ${level}`;
+  }
+
   function updateTemplateOptionsVisibility() {
     const canEditTemplate = outputMode === "full" && !!brandSelect.value;
 
@@ -787,6 +823,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function getProcessedClientContent(options = {}) {
     let client = inputHtml.value.trim();
     const applyFragmentCleanup = options.applyFragmentCleanup ?? (outputMode === "fragment");
+    const preserveFullExportLayout = !!options.preserveFullExportLayout;
     const keepStyles = applyFragmentCleanup ? document.getElementById("toggleKeepStyles")?.checked : true;
     const removeScriptsEnabled = applyFragmentCleanup && document.getElementById("toggleRemoveScripts")?.checked;
 
@@ -797,6 +834,7 @@ window.addEventListener("DOMContentLoaded", () => {
     client = stripKnownBrandWrappers(client);
 
     const sourceHead = extractHeadHtml(client);
+    const sourceHtmlAttrs = extractHtmlOpenTag(client);
     const sourceBodyAttrs = extractBodyOpenTag(client);
 
     if (applyFragmentCleanup && document.getElementById("toggleRemoveTitle")?.checked) {
@@ -808,16 +846,21 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     let preservedHeadMarkup = "";
-    if (keepStyles) {
-      preservedHeadMarkup = extractPreservableHeadMarkup(sourceHead);
-    }
-
-    if (keepStyles) {
-      const { htmlWithoutStyles } = extractStyleBlocks(client);
-      client = stripOuterDocument(htmlWithoutStyles);
+    if (preserveFullExportLayout) {
+      preservedHeadMarkup = sourceHead.trim();
+      client = extractBodyInnerHtml(client);
     } else {
-      client = stripOuterDocument(client);
-      client = client.replace(/<style\b[\s\S]*?<\/style>\s*/gi, "");
+      if (keepStyles) {
+        preservedHeadMarkup = extractPreservableHeadMarkup(sourceHead);
+      }
+
+      if (keepStyles) {
+        const { htmlWithoutStyles } = extractStyleBlocks(client);
+        client = stripOuterDocument(htmlWithoutStyles);
+      } else {
+        client = stripOuterDocument(client);
+        client = client.replace(/<style\b[\s\S]*?<\/style>\s*/gi, "");
+      }
     }
 
     if (applyFragmentCleanup && document.getElementById("toggleRemovePreview")?.checked) {
@@ -827,20 +870,34 @@ window.addEventListener("DOMContentLoaded", () => {
     return {
       clientHtml: client.trim(),
       preservedHeadMarkup,
-      bodyAttributes: buildMergedBodyAttributes(sourceBodyAttrs)
+      bodyAttributes: buildMergedBodyAttributes(sourceBodyAttrs),
+      htmlAttributes: sourceHtmlAttrs.trim()
     };
   }
 
   function buildFullEmailHtml() {
     const brandKey = brandSelect.value;
     const brand = brandPresets[brandKey];
-    const { clientHtml, preservedHeadMarkup, bodyAttributes } = getProcessedClientContent({ applyFragmentCleanup: false });
+    const useLiteralFullEmail = !!toggleLiteralFullEmail?.checked && !!inputHtml.value.trim();
+    const {
+      clientHtml,
+      preservedHeadMarkup,
+      bodyAttributes,
+      htmlAttributes
+    } = getProcessedClientContent({
+      applyFragmentCleanup: false,
+      preserveFullExportLayout: useLiteralFullEmail
+    });
 
     if (!brand) {
       return "";
     }
 
-    const headMarkup = preservedHeadMarkup ? `${preservedHeadMarkup}\n` : "\n";
+    const headMarkup = useLiteralFullEmail
+      ? (preservedHeadMarkup || `
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">`)
+      : (preservedHeadMarkup ? `${preservedHeadMarkup}\n` : "\n");
     const preserveDefaultSurface =
       (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
       (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
@@ -857,12 +914,12 @@ window.addEventListener("DOMContentLoaded", () => {
     const contentMarkup = trackingMarkup ? `${trackingMarkup}\n${clientHtml}` : clientHtml;
 
     return `<!DOCTYPE html>
-<html lang="en">
+<html${useLiteralFullEmail && htmlAttributes ? ` ${htmlAttributes}` : ' lang="en"'}>
 <head>
-<meta charset="utf-8">
+${useLiteralFullEmail ? `${headMarkup}` : `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cobrand Email</title>
-${headMarkup}</head>
+${headMarkup}`}</head>
 <body ${bodyAttributes}>
 <!-- COBRAND_HEADER_START -->
 ${brandHeader}
@@ -1266,7 +1323,7 @@ ${brandFooter}
 
     const gmailDarkScript = isDark ? buildGmailDarkModeScript() : "";
     const shellStyle = isMobile
-      ? "max-width:420px;margin:0 auto;"
+      ? "width:100%;max-width:420px;margin:0;"
       : "width:100%;margin:0 auto;";
 
     return `<!doctype html>
@@ -1283,9 +1340,11 @@ ${previewHead}
   }
   body{
     font-family:Arial,Helvetica,sans-serif;
+    overflow-x:${isMobile ? "auto" : "hidden"};
   }
   .stage{
-    padding:${isMobile ? "12px" : "28px"};
+    padding:${isMobile ? "0" : "28px"};
+    overflow-x:${isMobile ? "auto" : "visible"};
   }
   .shell{
     ${shellStyle}
@@ -1506,6 +1565,7 @@ ${gmailDarkScript}
       if (outputMode === "full" && !brandSelect.value) {
         outputStore.html = "";
         updateActionButtons();
+        renderEmailSize(0);
         renderStatus("warn", "Action needed", "Choose a brand to build a full branded email.");
 
         if (previewMode === "code") {
@@ -1528,8 +1588,10 @@ ${gmailDarkScript}
       }
 
       const finalHtml = getCurrentOutputHtml();
+      const finalBytes = getHtmlSizeBytes(finalHtml);
       outputStore.html = finalHtml;
       updateActionButtons();
+      renderEmailSize(finalBytes);
 
       if (!inputHtml.value.trim()) {
         renderStatus("info", "Using sample", outputMode === "full"
@@ -1564,6 +1626,7 @@ ${gmailDarkScript}
       renderQA(issues);
     } catch (err) {
       console.error(err);
+      renderEmailSize(0);
       renderStatus("warn", "Error", "The preview could not be generated. Review the error in the QA panel.");
       qaCount.textContent = "error";
       qaCount.className = "qa-pill high";
@@ -1594,10 +1657,10 @@ ${gmailDarkScript}
     if (!outputStore.html) return;
 
     const now = new Date();
-    const year = String(now.getFullYear());
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
-    const filename = `${year}${month}${day}_cobrand${outputMode === "fragment" ? ".txt" : ".html"}`;
+    const year = String(now.getFullYear());
+    const filename = `${month}${day}${year}_cobrand${outputMode === "fragment" ? ".txt" : ".html"}`;
     const blob = new Blob([outputStore.html], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1614,6 +1677,7 @@ ${gmailDarkScript}
     brandSelect.value = brandPresets[DEFAULT_BRAND] ? DEFAULT_BRAND : "";
     if (adIdInput) adIdInput.value = "";
     if (stealthLinkInput) stealthLinkInput.value = "";
+    if (toggleLiteralFullEmail) toggleLiteralFullEmail.checked = false;
     outputStore.html = "";
     codeOutputInner.value = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
@@ -1782,6 +1846,41 @@ ${gmailDarkScript}
       });
     }
   });
+
+  if (toggleLiteralFullEmail) {
+    toggleLiteralFullEmail.addEventListener("change", () => {
+      updatePreview();
+      saveState();
+    });
+  }
+
+  if (helpBtn && helpDialog) {
+    helpBtn.addEventListener("click", () => {
+      helpDialog.showModal();
+    });
+  }
+
+  if (closeHelpBtn && helpDialog) {
+    closeHelpBtn.addEventListener("click", () => {
+      helpDialog.close();
+    });
+  }
+
+  if (helpDialog) {
+    helpDialog.addEventListener("click", event => {
+      const bounds = helpDialog.getBoundingClientRect();
+      const clickedBackdrop =
+        event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom;
+
+      if (clickedBackdrop) {
+        helpDialog.close();
+      }
+    });
+  }
+
 
   populateBrandOptions();
   const restoredState = restoreState();
