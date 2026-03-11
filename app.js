@@ -5,17 +5,17 @@ window.addEventListener("DOMContentLoaded", () => {
 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
   <tbody>
     <tr>
-      <td align="center" style="padding:40px 20px;background:#ffffff;">
-        <table border="0" cellpadding="0" cellspacing="0" width="600" role="presentation" style="width:100%;max-width:600px;">
+      <td align="center" style="padding:56px 20px;background:#ffffff;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" role="presentation" style="width:100%;max-width:600px;border:1px dashed #cbd5e1;border-radius:18px;">
           <tbody>
             <tr>
-              <td style="font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:28px;line-height:1.2;color:#111827;font-weight:700;padding:0 0 16px;">
-                Client HTML goes here
+              <td align="center" style="font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:28px;line-height:1.2;color:#111827;font-weight:700;padding:40px 28px 14px;">
+                Paste HTML in the side panel to see it displayed here
               </td>
             </tr>
             <tr>
-              <td style="font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#4b5563;padding:0;">
-                This sample shows the brand header and footer wrapped around a neutral client content block.
+              <td align="center" style="font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#4b5563;padding:0 28px 40px;">
+                Use Code fragment for Omeda-ready HTML, or switch to Full branded email to preview it inside the selected template.
               </td>
             </tr>
           </tbody>
@@ -33,7 +33,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const qaCount = document.getElementById("qaCount");
   const statusPill = document.getElementById("statusPill");
   const statusMessage = document.getElementById("statusMessage");
-  const builderModeSwitch = document.getElementById("builderModeSwitch");
   const brandSelect = document.getElementById("brandSelect");
   const brandHelperText = document.getElementById("brandHelperText");
   const toggleTemplateOptionsBtn = document.getElementById("toggleTemplateOptionsBtn");
@@ -48,6 +47,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const adIdInput = document.getElementById("adIdInput");
   const stealthLinkInput = document.getElementById("stealthLinkInput");
   const stealthHelperText = document.getElementById("stealthHelperText");
+  const resetBtn = document.getElementById("resetBtn");
   const copyBtn = document.getElementById("copyBtn");
   const downloadBtn = document.getElementById("downloadBtn");
   const copyBtnLabel = copyBtn.querySelector(".btn-label");
@@ -57,7 +57,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const outputModeSwitch = document.getElementById("outputModeSwitch");
   const dropWrap = document.getElementById("dropWrap");
   const clearInputBtn = document.getElementById("clearInputBtn");
-  const fetchWebcastBtn = document.getElementById("fetchWebcastBtn");
   const webcastUrlInput = document.getElementById("webcastUrlInput");
   const webcastJsonInput = document.getElementById("webcastJsonInput");
   const webcastEventType = document.getElementById("webcastEventType");
@@ -73,12 +72,13 @@ window.addEventListener("DOMContentLoaded", () => {
   const webcastCtaUrl = document.getElementById("webcastCtaUrl");
   const webcastCtaLabel = document.getElementById("webcastCtaLabel");
 
-  const STORAGE_KEY = "email-assembly-studio-state-v1";
+  const STORAGE_KEY = "email-assembly-studio-state-v2";
+  const DEFAULT_BRAND = "thinkadvisor";
   const outputStore = { html: "" };
   let builderMode = "cleaner";
   let previewMode = "desktop";
-  let outputMode = "fragment";
-  let lastCleanerOutputMode = "fragment";
+  let outputMode = "full";
+  let lastCleanerOutputMode = "full";
   let lastCleanerShowDividers = true;
   let webcastSpeakers = [];
   let isRestoringState = false;
@@ -104,6 +104,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (brandPresets[currentValue]) {
       brandSelect.value = currentValue;
+    } else if (brandPresets[DEFAULT_BRAND]) {
+      brandSelect.value = DEFAULT_BRAND;
     }
   }
 
@@ -133,7 +135,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (headerBgColor) headerBgColor.value = defaultTemplateOptions.headerBg;
     if (footerBgColor) footerBgColor.value = defaultTemplateOptions.footerBg;
     if (toggleMatchFooterColor) toggleMatchFooterColor.checked = defaultTemplateOptions.matchFooterColor;
-    if (toggleShowDividers) toggleShowDividers.checked = builderMode === "webcast" ? false : defaultTemplateOptions.showDividers;
+    if (toggleShowDividers) toggleShowDividers.checked = defaultTemplateOptions.showDividers;
     syncFooterColorState();
     updatePreview();
   }
@@ -255,7 +257,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildTrackingMarkup() {
-    const adId = builderMode === "webcast" ? "" : (adIdInput?.value || "").trim();
+    const adId = (adIdInput?.value || "").trim();
     const stealthLink = getEffectiveStealthLink();
     const blocks = [];
 
@@ -586,7 +588,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if (isRestoringState) return;
 
     const state = {
-      builderMode,
       previewMode,
       outputMode,
       brand: brandSelect?.value || "",
@@ -597,22 +598,7 @@ window.addEventListener("DOMContentLoaded", () => {
       footerBg: footerBgColor?.value || "",
       matchFooterColor: !!toggleMatchFooterColor?.checked,
       showDividers: !!toggleShowDividers?.checked,
-      templateOptionsOpen,
-      webcastUrl: webcastUrlInput?.value || "",
-      webcastJson: webcastJsonInput?.value || "",
-      webcastEventType: webcastEventType?.value || "",
-      webcastHeadline: webcastHeadline?.value || "",
-      webcastDate: webcastDate?.value || "",
-      webcastTime: webcastTime?.value || "",
-      webcastDuration: webcastDuration?.value || "",
-      webcastBody: webcastBody?.value || "",
-      webcastSponsorLogo: webcastSponsorLogo?.value || "",
-      webcastSpeakerImage: webcastSpeakerImage?.value || "",
-      webcastSpeakerName: webcastSpeakerName?.value || "",
-      webcastSpeakerRole: webcastSpeakerRole?.value || "",
-      webcastCtaUrl: webcastCtaUrl?.value || "",
-      webcastCtaLabel: webcastCtaLabel?.value || "",
-      webcastSpeakers
+      templateOptionsOpen
     };
 
     try {
@@ -630,7 +616,9 @@ window.addEventListener("DOMContentLoaded", () => {
       isRestoringState = true;
 
       if (typeof state.inputHtml === "string" && inputHtml) inputHtml.value = state.inputHtml;
-      if (typeof state.brand === "string" && brandSelect) brandSelect.value = state.brand;
+      if (typeof state.brand === "string" && brandSelect) {
+        brandSelect.value = state.brand || (brandPresets[DEFAULT_BRAND] ? DEFAULT_BRAND : "");
+      }
       if (typeof state.adId === "string" && adIdInput) adIdInput.value = state.adId;
       if (typeof state.stealthLink === "string" && stealthLinkInput) stealthLinkInput.value = state.stealthLink;
       if (typeof state.headerBg === "string" && headerBgColor) headerBgColor.value = state.headerBg;
@@ -638,28 +626,13 @@ window.addEventListener("DOMContentLoaded", () => {
       if (toggleMatchFooterColor) toggleMatchFooterColor.checked = !!state.matchFooterColor;
       if (toggleShowDividers) toggleShowDividers.checked = !!state.showDividers;
       lastCleanerShowDividers = !!state.showDividers;
-      lastCleanerOutputMode = state.outputMode === "full" ? "full" : "fragment";
+      lastCleanerOutputMode = "full";
       templateOptionsOpen = !!state.templateOptionsOpen;
-      if (typeof state.webcastUrl === "string" && webcastUrlInput) webcastUrlInput.value = state.webcastUrl;
-      if (typeof state.webcastJson === "string" && webcastJsonInput) webcastJsonInput.value = state.webcastJson;
-      if (typeof state.webcastEventType === "string" && webcastEventType) webcastEventType.value = state.webcastEventType;
-      if (typeof state.webcastHeadline === "string" && webcastHeadline) webcastHeadline.value = state.webcastHeadline;
-      if (typeof state.webcastDate === "string" && webcastDate) webcastDate.value = state.webcastDate;
-      if (typeof state.webcastTime === "string" && webcastTime) webcastTime.value = state.webcastTime;
-      if (typeof state.webcastDuration === "string" && webcastDuration) webcastDuration.value = state.webcastDuration;
-      if (typeof state.webcastBody === "string" && webcastBody) webcastBody.value = state.webcastBody;
-      if (typeof state.webcastSponsorLogo === "string" && webcastSponsorLogo) webcastSponsorLogo.value = state.webcastSponsorLogo;
-      if (typeof state.webcastSpeakerImage === "string" && webcastSpeakerImage) webcastSpeakerImage.value = state.webcastSpeakerImage;
-      if (typeof state.webcastSpeakerName === "string" && webcastSpeakerName) webcastSpeakerName.value = state.webcastSpeakerName;
-      if (typeof state.webcastSpeakerRole === "string" && webcastSpeakerRole) webcastSpeakerRole.value = state.webcastSpeakerRole;
-      if (typeof state.webcastCtaUrl === "string" && webcastCtaUrl) webcastCtaUrl.value = state.webcastCtaUrl;
-      if (typeof state.webcastCtaLabel === "string" && webcastCtaLabel) webcastCtaLabel.value = state.webcastCtaLabel;
-      webcastSpeakers = Array.isArray(state.webcastSpeakers) ? state.webcastSpeakers : [];
 
       syncFooterColorState();
       updateColorLabels();
-      setBuilderMode(state.builderMode === "webcast" ? "webcast" : "cleaner");
-      setOutputMode(state.outputMode === "full" ? "full" : "fragment");
+      setBuilderMode("cleaner");
+      setOutputMode("full");
       setViewMode(["desktop", "mobile", "code", "dark"].includes(state.previewMode) ? state.previewMode : "desktop");
       isRestoringState = false;
       return true;
@@ -706,9 +679,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function hasValidFullEmailSelection() {
-    if (builderMode === "webcast") {
-      return !!brandSelect.value;
-    }
     return outputMode !== "full" || !!brandSelect.value;
   }
 
@@ -735,7 +705,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateTemplateOptionsVisibility() {
-    const canEditTemplate = (builderMode === "webcast" || outputMode === "full") && !!brandSelect.value;
+    const canEditTemplate = outputMode === "full" && !!brandSelect.value;
 
     if (!canEditTemplate) {
       templateOptionsOpen = false;
@@ -747,7 +717,7 @@ window.addEventListener("DOMContentLoaded", () => {
       toggleTemplateOptionsBtn.classList.toggle("is-open", templateOptionsOpen && canEditTemplate);
       const label = toggleTemplateOptionsBtn.querySelector(".btn-label");
       if (label) {
-        label.textContent = templateOptionsOpen && canEditTemplate ? "Hide template options" : "Edit template options";
+        label.textContent = templateOptionsOpen && canEditTemplate ? "Hide template styles" : "Edit template styles";
       }
     }
 
@@ -756,11 +726,9 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     if (brandHelperText) {
-      brandHelperText.textContent = builderMode === "webcast"
-        ? "Required for webcast builder. Pick the brand whose header and footer should wrap the invite."
-        : outputMode === "full"
-          ? "Required for full branded email. Pick the brand whose header and footer should wrap the client content."
-          : "Optional in code-only mode. Choose a brand only if you want to switch to full branded email.";
+      brandHelperText.textContent = outputMode === "full"
+        ? "Required for full branded email."
+        : "Not used in code fragment mode.";
     }
 
     updateStealthHelper();
@@ -1113,9 +1081,6 @@ ${brandFooter}
   }
 
   function getCurrentOutputHtml() {
-    if (builderMode === "webcast") {
-      return buildWebcastEmailHtml();
-    }
     return outputMode === "fragment" ? buildFragmentHtml() : buildFullEmailHtml();
   }
 
@@ -1255,7 +1220,7 @@ ${brandFooter}
     const gmailDarkScript = isDark ? buildGmailDarkModeScript() : "";
     const shellStyle = isMobile
       ? "max-width:420px;margin:0 auto;"
-      : "max-width:600px;width:100%;margin:0 auto;";
+      : "width:100%;margin:0 auto;";
 
     return `<!doctype html>
 <html>
@@ -1267,13 +1232,13 @@ ${previewHead}
   html,body{
     margin:0;
     padding:0;
-    background:${isDark ? "#0b1220" : "#eef2f7"};
+    background:${isDark ? "#0b1220" : "#d7dee6"};
   }
   body{
     font-family:Arial,Helvetica,sans-serif;
   }
   .stage{
-    padding:${isMobile ? "12px" : "20px"};
+    padding:${isMobile ? "12px" : "28px"};
   }
   .shell{
     ${shellStyle}
@@ -1460,33 +1425,11 @@ ${gmailDarkScript}
   }
 
   function setBuilderMode(mode) {
-    builderMode = mode;
-    appEl.classList.toggle("is-webcast", mode === "webcast");
-    appEl.classList.toggle("is-cleaner", mode === "cleaner");
-    document.querySelectorAll(".webcast-only").forEach(section => {
-      section.hidden = mode !== "webcast";
-    });
+    builderMode = "cleaner";
+    appEl.classList.add("is-cleaner");
     document.querySelectorAll(".cleaner-only").forEach(section => {
-      section.hidden = mode !== "cleaner";
+      section.hidden = false;
     });
-
-    builderModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.builderMode === mode);
-    });
-
-    if (mode === "webcast") {
-      if (toggleShowDividers) {
-        lastCleanerShowDividers = toggleShowDividers.checked;
-        toggleShowDividers.checked = false;
-      }
-      setOutputMode("full");
-    } else {
-      if (toggleShowDividers) {
-        toggleShowDividers.checked = lastCleanerShowDividers;
-      }
-      setOutputMode(lastCleanerOutputMode || "fragment");
-    }
-
     updateTemplateOptionsVisibility();
     updateActionButtons();
     updatePreview();
@@ -1494,9 +1437,7 @@ ${gmailDarkScript}
 
   function setOutputMode(mode) {
     outputMode = mode;
-    if (builderMode === "cleaner") {
-      lastCleanerOutputMode = mode;
-    }
+    lastCleanerOutputMode = mode;
 
     outputModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.outputMode === mode);
@@ -1510,29 +1451,6 @@ ${gmailDarkScript}
 
   function updatePreview() {
     try {
-      if (builderMode === "webcast" && !brandSelect.value) {
-        outputStore.html = "";
-        updateActionButtons();
-        renderStatus("warn", "Action needed", "Choose a brand to build a webcast invite.");
-
-        if (previewMode === "code") {
-          codeOutputInner.value = "Choose a brand to generate a webcast invite.";
-        } else {
-          previewFrame.srcdoc = `
-            <html>
-              <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
-                <div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#667085;padding:40px;text-align:center;">
-                  Choose a brand to generate a webcast invite.
-                </div>
-              </body>
-            </html>
-          `;
-        }
-
-        renderQABaseline();
-        return;
-      }
-
       if (outputMode === "full" && !brandSelect.value) {
         outputStore.html = "";
         updateActionButtons();
@@ -1561,19 +1479,14 @@ ${gmailDarkScript}
       outputStore.html = finalHtml;
       updateActionButtons();
 
-      if (builderMode === "webcast") {
-        const hasHeadline = !!webcastHeadline?.value.trim();
-        renderStatus(hasHeadline ? "ok" : "info", hasHeadline ? "Invite ready" : "Waiting for content", hasHeadline
-          ? "Webcast invite generated. Review the preview and QA checks, then copy or download."
-          : "Paste an ON24 URL or EventServlet JSON, then fetch event details.");
-      } else if (!inputHtml.value.trim()) {
+      if (!inputHtml.value.trim()) {
         renderStatus("info", "Using sample", outputMode === "full"
           ? "Showing a sample content block inside the selected brand template."
           : "Showing sample content so you can preview the cleanup output before pasting real HTML.");
       } else {
         renderStatus("ok", "Output ready", outputMode === "full"
-          ? "Full branded email generated. Review the preview and QA checks, then copy or download."
-          : "Cleaned code generated. Review the preview and QA checks, then copy or download.");
+          ? "Full branded email generated. Review the preview and QA checks, then copy or export."
+          : "Cleaned code generated. Review the preview and QA checks, then copy or export.");
       }
 
       if (previewMode === "code") {
@@ -1628,7 +1541,11 @@ ${gmailDarkScript}
   function downloadOutput() {
     if (!outputStore.html) return;
 
-    const filename = outputMode === "fragment" ? "clean-fragment.txt" : "cobrand-email.html";
+    const now = new Date();
+    const year = String(now.getFullYear());
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const filename = `${year}${month}${day}_cobrand${outputMode === "fragment" ? ".txt" : ".html"}`;
     const blob = new Blob([outputStore.html], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1642,13 +1559,9 @@ ${gmailDarkScript}
 
   function clearAll() {
     inputHtml.value = "";
-    brandSelect.value = "";
+    brandSelect.value = brandPresets[DEFAULT_BRAND] ? DEFAULT_BRAND : "";
     if (adIdInput) adIdInput.value = "";
     if (stealthLinkInput) stealthLinkInput.value = "";
-    if (webcastUrlInput) webcastUrlInput.value = "";
-    if (webcastJsonInput) webcastJsonInput.value = "";
-    webcastSpeakers = [];
-    populateWebcastFields({ eventType: "Webinar" });
     outputStore.html = "";
     codeOutputInner.value = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
@@ -1658,7 +1571,7 @@ ${gmailDarkScript}
       <html>
         <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
           <div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#667085;">
-            Paste email HTML on the left to see a preview here.
+            Paste HTML in the side panel to see it displayed here.
           </div>
         </body>
       </html>
@@ -1693,17 +1606,15 @@ ${gmailDarkScript}
 
   copyBtn.addEventListener("click", copyOutput);
   downloadBtn.addEventListener("click", downloadOutput);
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      clearAll();
+      saveState();
+    });
+  }
   inputHtml.addEventListener("input", () => {
     updatePreview();
     saveState();
-  });
-  builderModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
-    btn.addEventListener("click", event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setBuilderMode(btn.dataset.builderMode);
-      saveState();
-    });
   });
   brandSelect.addEventListener("change", () => {
     updateTemplateOptionsVisibility();
@@ -1718,19 +1629,6 @@ ${gmailDarkScript}
 
   if (clearInputBtn) {
     clearInputBtn.addEventListener("click", clearInputOnly);
-  }
-
-  if (fetchWebcastBtn) {
-    fetchWebcastBtn.addEventListener("click", async () => {
-      try {
-        renderStatus("info", "Fetching", "Trying to fetch webcast data from ON24.");
-        await fetchWebcastData();
-        saveState();
-      } catch (err) {
-        console.error(err);
-        renderStatus("warn", "Fetch failed", err.message);
-      }
-    });
   }
 
   if (toggleTemplateOptionsBtn) {
@@ -1824,36 +1722,12 @@ ${gmailDarkScript}
     }
   });
 
-  [
-    webcastUrlInput,
-    webcastJsonInput,
-    webcastEventType,
-    webcastHeadline,
-    webcastDate,
-    webcastTime,
-    webcastDuration,
-    webcastBody,
-    webcastSponsorLogo,
-    webcastSpeakerImage,
-    webcastSpeakerName,
-    webcastSpeakerRole,
-    webcastCtaUrl,
-    webcastCtaLabel
-  ].forEach(el => {
-    if (el) {
-      el.addEventListener("input", () => {
-        updatePreview();
-        saveState();
-      });
-    }
-  });
-
   populateBrandOptions();
   const restoredState = restoreState();
   if (!restoredState) {
     clearAll();
     setBuilderMode("cleaner");
-    setOutputMode("fragment");
+    setOutputMode("full");
     setViewMode("desktop");
     saveState();
   } else {
