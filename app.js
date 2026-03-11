@@ -49,7 +49,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const stealthLinkInput = document.getElementById("stealthLinkInput");
   const stealthHelperText = document.getElementById("stealthHelperText");
   const copyBtn = document.getElementById("copyBtn");
-  const resetAllBtn = document.getElementById("resetAllBtn");
   const downloadBtn = document.getElementById("downloadBtn");
   const copyBtnLabel = copyBtn.querySelector(".btn-label");
   const previewPane = document.getElementById("previewPane");
@@ -73,14 +72,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const webcastSpeakerRole = document.getElementById("webcastSpeakerRole");
   const webcastCtaUrl = document.getElementById("webcastCtaUrl");
   const webcastCtaLabel = document.getElementById("webcastCtaLabel");
-  const openBodyEditorBtn = document.getElementById("openBodyEditorBtn");
-  const bodyEditorDialog = document.getElementById("bodyEditorDialog");
-  const closeBodyEditorBtn = document.getElementById("closeBodyEditorBtn");
-  const cancelBodyEditorBtn = document.getElementById("cancelBodyEditorBtn");
-  const saveBodyEditorBtn = document.getElementById("saveBodyEditorBtn");
-  const toggleBodySourceBtn = document.getElementById("toggleBodySourceBtn");
-  const bodyEditorSurface = document.getElementById("bodyEditorSurface");
-  const bodyEditorSource = document.getElementById("bodyEditorSource");
 
   const STORAGE_KEY = "email-assembly-studio-state-v1";
   const outputStore = { html: "" };
@@ -549,32 +540,17 @@ window.addEventListener("DOMContentLoaded", () => {
     const source = String(bodyHtml || "").trim();
     if (!source) return { bodyHtml: "", takeawaysHtml: "" };
 
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = source;
-    const children = Array.from(wrapper.childNodes).filter(node => {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return Boolean(node.textContent?.trim());
-      }
-      return true;
-    });
-
-    const splitIndex = children.findIndex(node =>
-      /key takeaways/i.test((node.textContent || "").replace(/\s+/g, " ").trim())
+    const labeledListMatch = source.match(
+      /(<p\b[^>]*>[\s\S]*?(?:Key Takeaways|What You['’]ll Learn|What you['’]ll learn|In this webinar|In this session)[\s\S]*?<\/p>\s*)((?:<ul\b[\s\S]*?<\/ul>)|(?:<ol\b[\s\S]*?<\/ol>))/i
     );
-
-    if (splitIndex !== -1) {
-      const bodyHtml = children
-        .slice(0, splitIndex)
-        .map(node => node.nodeType === Node.TEXT_NODE ? node.textContent : node.outerHTML)
-        .join("")
-        .trim();
-      const takeawaysHtml = children
-        .slice(splitIndex)
-        .map(node => node.nodeType === Node.TEXT_NODE ? node.textContent : node.outerHTML)
-        .join("")
-        .trim();
-
-      return { bodyHtml, takeawaysHtml };
+    if (labeledListMatch) {
+      const fullMatch = labeledListMatch[0];
+      const introHtml = labeledListMatch[1];
+      const listHtml = labeledListMatch[2];
+      return {
+        bodyHtml: source.replace(fullMatch, "").trim(),
+        takeawaysHtml: `${introHtml}${listHtml}`.trim()
+      };
     }
 
     const firstListMatch = source.match(/(<ul\b[\s\S]*?<\/ul>|<ol\b[\s\S]*?<\/ol>)/i);
@@ -898,10 +874,8 @@ ${brandFooter}
       ctaLabel
     } = getWebcastFields();
     const sections = extractTakeawaySection(bodyHtml);
+    const mainBodyHtml = sections.bodyHtml || bodyHtml || "<p>Webcast description goes here.</p>";
     const takeawaysHtml = sections.takeawaysHtml;
-    const mainBodyHtml = takeawaysHtml
-      ? (sections.bodyHtml || "")
-      : (sections.bodyHtml || bodyHtml || "<p>Webcast description goes here.</p>");
     const fontStack = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
     const buttonColor = theme.buttonAccent || theme.accent;
 
@@ -1131,86 +1105,6 @@ ${brandFooter}
 </html>`;
   }
 
-  function isBodySourceMode() {
-    return !bodyEditorSource?.hidden;
-  }
-
-  function syncBodyEditorSourceFromSurface() {
-    if (!bodyEditorSurface || !bodyEditorSource) return;
-    bodyEditorSource.value = bodyEditorSurface.innerHTML.trim();
-  }
-
-  function syncBodyEditorSurfaceFromSource() {
-    if (!bodyEditorSurface || !bodyEditorSource) return;
-    bodyEditorSurface.innerHTML = bodyEditorSource.value.trim();
-  }
-
-  function openBodyEditor() {
-    if (!bodyEditorDialog || !bodyEditorSurface || !bodyEditorSource || !webcastBody) return;
-    const currentHtml = webcastBody.value.trim();
-    bodyEditorSurface.innerHTML = currentHtml || "<p></p>";
-    bodyEditorSource.value = currentHtml;
-    bodyEditorSurface.hidden = false;
-    bodyEditorSource.hidden = true;
-    if (toggleBodySourceBtn) toggleBodySourceBtn.textContent = "Source";
-    bodyEditorDialog.showModal();
-    bodyEditorSurface.focus();
-  }
-
-  function closeBodyEditor() {
-    bodyEditorDialog?.close();
-  }
-
-  function toggleBodySourceMode() {
-    if (!bodyEditorSurface || !bodyEditorSource || !toggleBodySourceBtn) return;
-
-    if (isBodySourceMode()) {
-      syncBodyEditorSurfaceFromSource();
-      bodyEditorSource.hidden = true;
-      bodyEditorSurface.hidden = false;
-      toggleBodySourceBtn.textContent = "Source";
-      bodyEditorSurface.focus();
-      return;
-    }
-
-    syncBodyEditorSourceFromSurface();
-    bodyEditorSurface.hidden = true;
-    bodyEditorSource.hidden = false;
-    toggleBodySourceBtn.textContent = "Visual";
-    bodyEditorSource.focus();
-  }
-
-  function applyBodyEditorChanges() {
-    if (!webcastBody || !bodyEditorSurface || !bodyEditorSource) return;
-
-    if (isBodySourceMode()) {
-      webcastBody.value = bodyEditorSource.value.trim();
-    } else {
-      syncBodyEditorSourceFromSurface();
-      webcastBody.value = bodyEditorSource.value.trim();
-    }
-
-    updatePreview();
-    saveState();
-    closeBodyEditor();
-  }
-
-  function runBodyEditorCommand(action, value = null) {
-    if (!bodyEditorSurface || isBodySourceMode()) return;
-
-    bodyEditorSurface.focus();
-    if (action === "createLink") {
-      const url = window.prompt("Enter a URL");
-      if (!url) return;
-      document.execCommand("createLink", false, url);
-      syncBodyEditorSourceFromSurface();
-      return;
-    }
-
-    document.execCommand(action, false, value);
-    syncBodyEditorSourceFromSurface();
-  }
-
   function buildFragmentHtml() {
     const { clientHtml, preservedHeadMarkup } = getProcessedClientContent();
     const trackingMarkup = buildTrackingMarkup();
@@ -1348,10 +1242,6 @@ ${brandFooter}
     let previewContent = finalHtml;
 
     if (outputMode === "full") {
-      if (!isDark) {
-        return finalHtml;
-      }
-
       const headMatch = finalHtml.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
       const bodyMatch = finalHtml.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
       previewHead = headMatch ? headMatch[1].trim() : "";
@@ -1363,7 +1253,9 @@ ${brandFooter}
     }
 
     const gmailDarkScript = isDark ? buildGmailDarkModeScript() : "";
-    const shellStyle = isMobile ? "max-width:420px;margin:0 auto;" : "width:100%;margin:0 auto;";
+    const shellStyle = isMobile
+      ? "max-width:420px;margin:0 auto;"
+      : "max-width:600px;width:100%;margin:0 auto;";
 
     return `<!doctype html>
 <html>
@@ -1381,7 +1273,7 @@ ${previewHead}
     font-family:Arial,Helvetica,sans-serif;
   }
   .stage{
-    padding:20px;
+    padding:${isMobile ? "12px" : "20px"};
   }
   .shell{
     ${shellStyle}
@@ -1757,8 +1649,6 @@ ${gmailDarkScript}
     if (webcastJsonInput) webcastJsonInput.value = "";
     webcastSpeakers = [];
     populateWebcastFields({ eventType: "Webinar" });
-    if (bodyEditorSurface) bodyEditorSurface.innerHTML = "";
-    if (bodyEditorSource) bodyEditorSource.value = "";
     outputStore.html = "";
     codeOutputInner.value = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
@@ -1789,21 +1679,6 @@ ${gmailDarkScript}
     inputHtml.focus();
   }
 
-  function resetAllState() {
-    try {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } catch (err) {
-      console.error(err);
-    }
-
-    resetTemplateOptions();
-    clearAll();
-    setBuilderMode("cleaner");
-    setOutputMode("fragment");
-    setViewMode("desktop");
-    saveState();
-  }
-
   function loadFile(file) {
     if (!file) return;
     if (!(/\.html?$/i.test(file.name) || file.type === "text/html" || file.type === "text/plain")) return;
@@ -1817,7 +1692,6 @@ ${gmailDarkScript}
   }
 
   copyBtn.addEventListener("click", copyOutput);
-  resetAllBtn?.addEventListener("click", resetAllState);
   downloadBtn.addEventListener("click", downloadOutput);
   inputHtml.addEventListener("input", () => {
     updatePreview();
@@ -1858,40 +1732,6 @@ ${gmailDarkScript}
       }
     });
   }
-
-  if (openBodyEditorBtn) {
-    openBodyEditorBtn.addEventListener("click", openBodyEditor);
-  }
-
-  if (closeBodyEditorBtn) {
-    closeBodyEditorBtn.addEventListener("click", closeBodyEditor);
-  }
-
-  if (cancelBodyEditorBtn) {
-    cancelBodyEditorBtn.addEventListener("click", closeBodyEditor);
-  }
-
-  if (saveBodyEditorBtn) {
-    saveBodyEditorBtn.addEventListener("click", applyBodyEditorChanges);
-  }
-
-  if (toggleBodySourceBtn) {
-    toggleBodySourceBtn.addEventListener("click", toggleBodySourceMode);
-  }
-
-  if (bodyEditorSurface) {
-    bodyEditorSurface.addEventListener("input", syncBodyEditorSourceFromSurface);
-  }
-
-  if (bodyEditorSource) {
-    bodyEditorSource.addEventListener("input", syncBodyEditorSurfaceFromSource);
-  }
-
-  document.querySelectorAll("[data-editor-action]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      runBodyEditorCommand(btn.dataset.editorAction, btn.dataset.editorValue || null);
-    });
-  });
 
   if (toggleTemplateOptionsBtn) {
     toggleTemplateOptionsBtn.addEventListener("click", () => {

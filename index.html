@@ -25,15 +25,6 @@
     </div>
 
     <div class="topbar-actions">
-      <button id="resetAllBtn" class="btn btn-subtle" type="button">
-        <span class="btn-icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path d="M16 10a6 6 0 1 1-1.76-4.24"></path>
-            <path d="M16 4v4h-4"></path>
-          </svg>
-        </span>
-        <span class="btn-label">Reset</span>
-      </button>
       <button id="copyBtn" class="btn ghost" type="button">
         <span class="btn-icon" aria-hidden="true">
           <svg viewBox="0 0 20 20" fill="none">
@@ -250,15 +241,10 @@
     <input id="webcastDuration" class="text-input" type="text" placeholder="1 hour">
   </label>
 
-  <div class="stacked-field">
-    <div class="field-head">
-      <span class="field-label">Body HTML</span>
-      <button id="openBodyEditorBtn" class="btn btn-subtle btn-small" type="button">
-        <span class="btn-label">Open editor</span>
-      </button>
-    </div>
+  <label class="stacked-field" for="webcastBody">
+    <span class="field-label">Body HTML</span>
     <textarea id="webcastBody" class="text-area tall" spellcheck="false" placeholder="Event body HTML"></textarea>
-  </div>
+  </label>
 
   <div class="two-up-fields">
     <label class="stacked-field" for="webcastSponsorLogo">
@@ -470,37 +456,6 @@
 </section>
   </main>
 </div>
-
-<dialog id="bodyEditorDialog" class="editor-dialog">
-  <form method="dialog" class="editor-dialog-card">
-    <div class="editor-dialog-head">
-      <div>
-        <h2>Edit Body Content</h2>
-        <p>Use the visual editor for quick formatting, or switch to source when needed.</p>
-      </div>
-      <button id="closeBodyEditorBtn" class="btn btn-subtle btn-small" type="button">
-        <span class="btn-label">Close</span>
-      </button>
-    </div>
-
-    <div class="editor-toolbar">
-      <button class="editor-tool" type="button" data-editor-action="bold">Bold</button>
-      <button class="editor-tool" type="button" data-editor-action="italic">Italic</button>
-      <button class="editor-tool" type="button" data-editor-action="insertUnorderedList">Bullets</button>
-      <button class="editor-tool" type="button" data-editor-action="formatBlock" data-editor-value="p">Paragraph</button>
-      <button class="editor-tool" type="button" data-editor-action="createLink">Link</button>
-      <button id="toggleBodySourceBtn" class="editor-tool" type="button">Source</button>
-    </div>
-
-    <div id="bodyEditorSurface" class="editor-surface" contenteditable="true"></div>
-    <textarea id="bodyEditorSource" class="editor-source" spellcheck="false" hidden></textarea>
-
-    <div class="editor-dialog-actions">
-      <button id="cancelBodyEditorBtn" class="btn ghost" type="button">Cancel</button>
-      <button id="saveBodyEditorBtn" class="btn primary" type="button">Apply changes</button>
-    </div>
-  </form>
-</dialog>
 
 </body>
 </html>
