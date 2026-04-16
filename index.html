@@ -33,7 +33,8 @@
             <path d="M10 14h.01"></path>
           </svg>
         </span>
-        <span class="btn-label">Help</span>
+        <span class="btn-label">FAQ</span>
+        <span id="helpUpdateBadge" class="update-badge" hidden>New</span>
       </button>
       <button id="resetBtn" class="btn btn-subtle" type="button">
         <span class="btn-icon" aria-hidden="true">
@@ -69,31 +70,50 @@
 
   <main class="workspace">
     <aside class="sidebar">
+<div class="sidebar-group-label">Build</div>
 <section class="sidebar-section" id="outputTypeSection">
   <div class="step-title">
     <span class="step-badge" aria-hidden="true">1</span>
-    <h2>Output Type</h2>
+    <h2>Step 1 — Choose your output</h2>
   </div>
-  <p class="mode-help" data-mode-help="full"><strong>Full branded email</strong> uses your pasted HTML as the main content, then adds the selected brand header and footer around it.</p>
-  <p class="mode-help mode-help-secondary" data-mode-help="fragment" hidden><strong>Code fragment</strong> keeps only the cleaned content block, without the brand wrapper, for Omeda-ready or ESP fragment use.</p>
-
 <div class="mode-switch" id="outputModeSwitch">
   <button class="switch-btn active" data-output-mode="full" type="button">Full branded email</button>
   <button class="switch-btn" data-output-mode="fragment" type="button">Code fragment</button>
 </div>
+  <p id="outputModeHint" class="mode-help">Adds your selected header and footer</p>
+</section>
+
+<section class="sidebar-section" id="brandSection">
+  <div class="section-title">
+    <div class="step-title">
+      <span class="step-badge" aria-hidden="true">2</span>
+      <h2>Brand Template</h2>
+    </div>
+  </div>
+  <p id="brandHelperText">Used only for full email.</p>
+  <div class="select-shell">
+    <select id="brandSelect" class="select">
+      <option value="">Choose a brand…</option>
+    </select>
+    <span class="dropdown-icon" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="m6 8 4 4 4-4"></path>
+      </svg>
+    </span>
+  </div>
+
 </section>
 
 <section class="sidebar-section">
   <div class="section-head section-head-actions">
     <div class="step-title">
-      <span class="step-badge" aria-hidden="true">2</span>
+      <span class="step-badge" aria-hidden="true">3</span>
       <h2>HTML Input</h2>
     </div>
     <button id="clearInputBtn" class="btn btn-subtle btn-small" type="button">
       <span class="btn-label">Clear code</span>
     </button>
   </div>
-  <p>Paste HTML here or drop in an .html file.</p>
 
   <div class="dropwrap" id="dropWrap">
     <textarea
@@ -115,205 +135,351 @@
   </div>
 </section>
 
-<section class="sidebar-section" id="brandSection">
-  <div class="step-title">
-    <span class="step-badge" aria-hidden="true">3</span>
-    <h2>Brand Template</h2>
-  </div>
-  <p id="brandHelperText">Required for full branded email.</p>
-  <div class="select-shell">
-    <select id="brandSelect" class="select">
-      <option value="">Choose a brand…</option>
-    </select>
-    <span class="dropdown-icon" aria-hidden="true">
+<div class="sidebar-group-label">Tools</div>
+
+<section class="sidebar-section tool-dock">
+  <button id="cleanupSettingsBtn" class="tool-button" type="button" aria-expanded="false">
+    <span class="btn-icon" aria-hidden="true">
       <svg viewBox="0 0 20 20" fill="none">
-        <path d="m6 8 4 4 4-4"></path>
+        <path d="m9.5 2.5 1.2 3.4 3.3 1.2-3.3 1.2-1.2 3.4-1.2-3.4-3.3-1.2 3.3-1.2z"></path>
+        <path d="m14.5 10.5.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"></path>
       </svg>
     </span>
-  </div>
-
-      <button id="toggleTemplateOptionsBtn" class="template-toggle" type="button" hidden aria-expanded="false">
-    <span class="btn-label">Edit template styles</span>
-    <span class="toggle-arrow" aria-hidden="true">
+    <span class="launcher-row-copy">
+      <span class="launcher-row-title">Clean up HTML</span>
+    </span>
+    <span class="launcher-arrow" aria-hidden="true">
       <svg viewBox="0 0 20 20" fill="none">
-        <path d="m6 8 4 4 4-4"></path>
+        <path d="M7 4.5 13 10l-6 5.5"></path>
       </svg>
     </span>
   </button>
 
-  <div id="templateControls" class="template-controls" hidden>
-    <div class="section-head section-head-actions template-head">
-      <p class="helper-note template-note">Optional: adjust the template background colors or hide the divider lines. These settings only affect full email mode.</p>
-      <button id="resetTemplateOptionsBtn" class="btn btn-subtle btn-small" type="button">
-        <span class="btn-icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path d="M16 10a6 6 0 1 1-1.76-4.24"></path>
-            <path d="M16 4v4h-4"></path>
-            <path d="M16 8 13.5 5.5"></path>
-          </svg>
-        </span>
-        <span class="btn-label">Reset</span>
-      </button>
-    </div>
+  <button id="toggleTemplateOptionsBtn" class="tool-button" type="button" hidden aria-expanded="false">
+    <span class="btn-icon" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M4 13.5 13.5 4l2.5 2.5-9.5 9.5H4z"></path>
+        <path d="m12 5.5 2.5 2.5"></path>
+      </svg>
+    </span>
+    <span class="launcher-row-copy">
+      <span class="launcher-row-title">Edit header &amp; footer</span>
+    </span>
+    <span class="launcher-arrow" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M7 4.5 13 10l-6 5.5"></path>
+      </svg>
+    </span>
+  </button>
 
-    <div class="color-grid">
-      <label class="field-card" for="headerBgColor">
-        <span class="field-label">Header background</span>
-        <span class="color-field">
-          <input id="headerBgColor" class="color-input" type="color" value="#ffffff">
-          <span id="headerBgValue" class="color-value">#FFFFFF</span>
-        </span>
-      </label>
+  <button id="trackingToolBtn" class="tool-button" type="button" aria-expanded="false">
+    <span class="btn-icon" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M4 5.5h12"></path>
+        <path d="M4 10h12"></path>
+        <path d="M4 14.5h12"></path>
+      </svg>
+    </span>
+    <span class="launcher-row-copy">
+      <span class="launcher-row-title">Tracking and Stealth Link</span>
+    </span>
+    <span class="launcher-arrow" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M7 4.5 13 10l-6 5.5"></path>
+      </svg>
+    </span>
+  </button>
 
-      <label class="field-card" for="footerBgColor">
-        <span class="field-label">Footer background</span>
-        <span class="color-field">
-          <input id="footerBgColor" class="color-input" type="color" value="#ffffff">
-          <span id="footerBgValue" class="color-value">#FFFFFF</span>
-        </span>
-      </label>
-    </div>
-
-          <label class="toggle-card toggle-card-compact">
-      <input id="toggleMatchFooterColor" type="checkbox">
-      <span class="toggle-ui"></span>
-      <span class="toggle-copy">
-        <strong>Match Footer to Header</strong>
-        <small>Uses the same background color for both areas so the template feels unified.</small>
-      </span>
-    </label>
-
-    <label class="toggle-card toggle-card-compact">
-      <input id="toggleShowDividers" type="checkbox" checked>
-      <span class="toggle-ui"></span>
-      <span class="toggle-copy">
-        <strong>Show Divider Lines</strong>
-        <small>Keeps the thin lines above or below the brand header and footer.</small>
-      </span>
-    </label>
-  </div>
+  <button id="qaToolBtn" class="tool-button" type="button" aria-expanded="false">
+    <span class="btn-icon" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M4.5 4.5h11v11h-11z"></path>
+        <path d="M7 8.5h6"></path>
+        <path d="M7 11.5h6"></path>
+      </svg>
+    </span>
+    <span class="launcher-row-copy">
+      <span class="launcher-row-title">QA checks</span>
+    </span>
+    <span id="qaCount" class="qa-pill">0 issues</span>
+    <span class="launcher-arrow" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M7 4.5 13 10l-6 5.5"></path>
+      </svg>
+    </span>
+  </button>
 </section>
+    </aside>
 
-      <section class="sidebar-section qa-section">
-        <div class="section-head">
-          <div class="step-title">
-            <span class="step-badge" aria-hidden="true">4</span>
-            <h2>QA Checks</h2>
+    <aside id="templateDialog" class="cleanup-drawer template-drawer" aria-hidden="true">
+      <div class="editor-dialog-card cleanup-dialog-card">
+        <div class="editor-dialog-head">
+          <div>
+            <h2>Edit header &amp; footer</h2>
+            <p>Header, footer, and divider styles.</p>
           </div>
-          <span id="qaCount" class="qa-pill">0 issues</span>
-        </div>
-        <div id="qaReport" class="qa-list">
-          <div class="qa-item ok">
-            <div class="qa-title">Checks will appear here</div>
-            <div class="qa-text">Once output is generated, this panel will flag email compatibility and size issues.</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="sidebar-section">
-        <div class="section-title">
-          <h2>Advanced</h2>
-        </div>
-        <p>Optional controls for tracking and fragment-specific cleanup.</p>
-
-        <label class="toggle-card toggle-card-compact">
-          <input id="toggleLiteralFullEmail" type="checkbox">
-          <span class="toggle-ui"></span>
-          <span class="toggle-copy">
-            <strong>Preserve full export layout</strong>
-            <small>For full-document exports like Stripo, keep more of the original document structure when building full email output.</small>
-          </span>
-        </label>
-
-        <details class="advanced-options">
-          <summary>
-            <span class="summary-title">
-              <span class="section-icon" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none">
-                  <path d="M4 5.5h12"></path>
-                  <path d="M4 10h12"></path>
-                  <path d="M4 14.5h12"></path>
-                </svg>
-              </span>
-              <span>Ad Tracking and Stealth Links</span>
-            </span>
-            <span class="toggle-arrow" aria-hidden="true">
+          <button id="closeTemplateBtn" class="btn btn-subtle btn-small icon-only-btn" type="button" aria-label="Close edit header and footer panel">
+            <span class="btn-icon" aria-hidden="true">
               <svg viewBox="0 0 20 20" fill="none">
-                <path d="m6 8 4 4 4-4"></path>
+                <path d="M5.5 5.5 14.5 14.5"></path>
+                <path d="M14.5 5.5 5.5 14.5"></path>
               </svg>
             </span>
-          </summary>
-          <p class="helper-note">If a supported brand is selected and the stealth link field is blank, the tool will use that brand’s default stealth link automatically.</p>
+          </button>
+        </div>
 
+        <div class="cleanup-dialog-body">
+          <div class="section-head section-head-actions template-head">
+            <p class="helper-note template-note">Applies only to the brand wrapper.</p>
+            <button id="resetTemplateOptionsBtn" class="btn btn-subtle btn-small" type="button">
+              <span class="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path d="M16 10a6 6 0 1 1-1.76-4.24"></path>
+                  <path d="M16 4v4h-4"></path>
+                  <path d="M16 8 13.5 5.5"></path>
+                </svg>
+              </span>
+              <span class="btn-label">Reset</span>
+            </button>
+          </div>
+
+          <div class="color-grid color-grid-grouped">
+            <section class="field-group" aria-labelledby="headerStyleGroupLabel">
+              <div class="field-group-head">
+                <h3 id="headerStyleGroupLabel">Header</h3>
+              </div>
+
+              <label class="field-card" for="headerBgColor">
+                <span class="field-label">Background</span>
+                <span class="color-field">
+                  <input id="headerBgColor" class="color-input" type="color" value="#ffffff">
+                  <span id="headerBgValue" class="color-value">#FFFFFF</span>
+                </span>
+              </label>
+
+              <label class="field-card" for="headerOuterBgColor">
+                <span class="field-label">Outer background</span>
+                <span class="color-field">
+                  <input id="headerOuterBgColor" class="color-input" type="color" value="#ffffff">
+                  <span id="headerOuterBgValue" class="color-value">#FFFFFF</span>
+                </span>
+              </label>
+            </section>
+
+            <section class="field-group" aria-labelledby="footerStyleGroupLabel">
+              <div class="field-group-head">
+                <h3 id="footerStyleGroupLabel">Footer</h3>
+              </div>
+
+              <label class="field-card" for="footerBgColor">
+                <span class="field-label">Background</span>
+                <span class="color-field">
+                  <input id="footerBgColor" class="color-input" type="color" value="#ffffff">
+                  <span id="footerBgValue" class="color-value">#FFFFFF</span>
+                </span>
+              </label>
+
+              <label class="field-card" for="footerOuterBgColor">
+                <span class="field-label">Outer background</span>
+                <span class="color-field">
+                  <input id="footerOuterBgColor" class="color-input" type="color" value="#ffffff">
+                  <span id="footerOuterBgValue" class="color-value">#FFFFFF</span>
+                </span>
+              </label>
+            </section>
+          </div>
+
+          <label class="toggle-card toggle-card-compact">
+            <input id="toggleMatchFooterColor" type="checkbox" checked>
+            <span class="toggle-ui"></span>
+            <span class="toggle-copy">
+              <strong>Match Footer to Header</strong>
+              <small>Uses the same colors.</small>
+            </span>
+          </label>
+
+          <label class="toggle-card toggle-card-compact">
+            <input id="toggleShowDividers" type="checkbox" checked>
+            <span class="toggle-ui"></span>
+            <span class="toggle-copy">
+              <strong>Show Divider Lines</strong>
+              <small>Keeps the divider lines.</small>
+            </span>
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <aside id="trackingDialog" class="cleanup-drawer" aria-hidden="true">
+      <div class="editor-dialog-card cleanup-dialog-card">
+        <div class="editor-dialog-head">
+          <div>
+            <h2>Tracking and Stealth Link</h2>
+            <p>Advertiser ID and tracking link.</p>
+          </div>
+          <button id="closeTrackingBtn" class="btn btn-subtle btn-small icon-only-btn" type="button" aria-label="Close tracking panel">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none">
+                <path d="M5.5 5.5 14.5 14.5"></path>
+                <path d="M14.5 5.5 5.5 14.5"></path>
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        <div class="cleanup-dialog-body">
           <label class="stacked-field" for="adIdInput">
-            <span class="field-label">Ad ID</span>
+            <span class="field-label field-label-inline">
+              <span>Ad ID</span>
+              <span class="info-tip">
+                <button class="info-tip-trigger" type="button" aria-label="About ad ID" aria-expanded="false" data-tooltip="Internal advertiser ID for tracking. Example: 1696.">
+                  <span aria-hidden="true">ⓘ</span>
+                </button>
+              </span>
+            </span>
             <input id="adIdInput" class="text-input" type="text" inputmode="numeric" placeholder="Example: 1696">
           </label>
 
           <label class="stacked-field" for="stealthLinkInput">
-            <span class="field-label">Stealth link</span>
-            <input id="stealthLinkInput" class="text-input" type="url" placeholder="Optional brand stealth URL">
+            <span class="field-label field-label-inline">
+              <span>Stealth link</span>
+              <span class="info-tip">
+                <button class="info-tip-trigger" type="button" aria-label="About stealth link" aria-expanded="false" data-tooltip="Optional tracking URL. Overrides the default brand link.">
+                  <span aria-hidden="true">ⓘ</span>
+                </button>
+              </span>
+            </span>
+            <input id="stealthLinkInput" class="text-input" type="url" placeholder="Brand stealth URL">
           </label>
 
-          <p id="stealthHelperText" class="helper-note compact-note">No default stealth link is available for the current selection.</p>
-        </details>
+          <p id="stealthHelperText" class="helper-note compact-note">No default tracking link available</p>
+        </div>
+      </div>
+    </aside>
 
-        <details class="advanced-options advanced-options-nested">
-          <summary>
-            <span class="summary-title">
-              <span class="section-icon" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none">
-                  <path d="m9.5 2.5 1.2 3.4 3.3 1.2-3.3 1.2-1.2 3.4-1.2-3.4-3.3-1.2 3.3-1.2z"></path>
-                  <path d="m14.5 10.5.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"></path>
-                </svg>
-              </span>
-              <span>Code Fragment Cleaning</span>
-            </span>
-            <span class="toggle-arrow" aria-hidden="true">
+    <aside id="qaDialog" class="cleanup-drawer" aria-hidden="true">
+      <div class="editor-dialog-card cleanup-dialog-card">
+        <div class="editor-dialog-head">
+          <div>
+            <h2>QA checks</h2>
+            <p>Warnings before copy or export.</p>
+          </div>
+          <button id="closeQaBtn" class="btn btn-subtle btn-small icon-only-btn" type="button" aria-label="Close QA panel">
+            <span class="btn-icon" aria-hidden="true">
               <svg viewBox="0 0 20 20" fill="none">
-                <path d="m6 8 4 4 4-4"></path>
+                <path d="M5.5 5.5 14.5 14.5"></path>
+                <path d="M14.5 5.5 5.5 14.5"></path>
               </svg>
             </span>
-          </summary>
-          <p class="helper-note">Best used for Code fragment mode. Full branded email mode typically does not need these adjusted.</p>
+          </button>
+        </div>
 
-<label class="toggle-card">
-  <input id="toggleKeepStyles" type="checkbox" checked>
-  <span class="toggle-ui"></span>
-  <span class="toggle-copy">
-    <strong>Keep style blocks</strong>
-    <small>Preserves embedded style tags and email-safe head CSS for responsive source HTML.</small>
-  </span>
-</label>
+        <div class="cleanup-dialog-body">
+          <div id="qaSummary" class="qa-summary ok">
+            <div class="qa-summary-label">QA status</div>
+            <div id="qaSummaryText" class="qa-summary-text">Checks will appear here after output is generated.</div>
+          </div>
+          <div id="qaReport" class="qa-list">
+            <div class="qa-item ok">
+              <div class="qa-title">Checks will appear here</div>
+              <div class="qa-text">Once output is generated, this panel will flag email compatibility and size issues.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
 
-<label class="toggle-card">
-  <input id="toggleRemovePreview" type="checkbox" checked>
-  <span class="toggle-ui"></span>
-  <span class="toggle-copy">
-    <strong>Remove hidden preheader</strong>
-    <small>Strips hidden preview text so your ESP can set its own. Visible content is not touched.</small>
-  </span>
-</label>
+    <aside id="cleanupDialog" class="cleanup-drawer" aria-hidden="true">
+      <div class="editor-dialog-card cleanup-dialog-card">
+        <div class="editor-dialog-head">
+          <div>
+            <h2>Clean up HTML</h2>
+            <p>Cleanup controls by output mode.</p>
+          </div>
+          <button id="closeCleanupBtn" class="btn btn-subtle btn-small icon-only-btn" type="button" aria-label="Close cleanup panel">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none">
+                <path d="M5.5 5.5 14.5 14.5"></path>
+                <path d="M14.5 5.5 5.5 14.5"></path>
+              </svg>
+            </span>
+          </button>
+        </div>
 
-<label class="toggle-card">
-  <input id="toggleRemoveTitle" type="checkbox" checked>
-  <span class="toggle-ui"></span>
-  <span class="toggle-copy">
-    <strong>Remove title tag</strong>
-    <small>Removes the page title because your ESP handles the subject line.</small>
-  </span>
-</label>
+        <div class="cleanup-dialog-body">
+          <div class="advanced-panel" id="cleanupModePanel">
+            <div class="advanced-panel-head">
+              <span class="summary-title">
+                <span id="cleanupModeTitle">Fragment cleanup</span>
+              </span>
+            </div>
+            <p id="cleanupModeNote" class="helper-note">Use Keep embedded styles to preserve client styling.</p>
+          </div>
 
-<label class="toggle-card">
-  <input id="toggleRemoveScripts" type="checkbox" checked>
-  <span class="toggle-ui"></span>
-  <span class="toggle-copy">
-    <strong>Remove scripts</strong>
-    <small>Removes JavaScript and similar web-only code that email clients do not support.</small>
-  </span>
-</label>
-        </details>
-      </section>
+          <label class="toggle-card" id="keepStylesRow">
+            <input id="toggleKeepStyles" type="checkbox" checked>
+            <span class="toggle-ui"></span>
+            <span class="toggle-copy">
+              <strong>Keep embedded styles</strong>
+              <small>Preserves the client’s embedded CSS.</small>
+            </span>
+          </label>
+
+          <label class="toggle-card" id="removePreviewRow">
+            <input id="toggleRemovePreview" type="checkbox" checked>
+            <span class="toggle-ui"></span>
+            <span class="toggle-copy">
+              <strong>Remove hidden preheader</strong>
+              <small>Removes hidden preview text.</small>
+            </span>
+          </label>
+
+          <label class="toggle-card" id="removeTitleRow">
+            <input id="toggleRemoveTitle" type="checkbox" checked>
+            <span class="toggle-ui"></span>
+            <span class="toggle-copy">
+              <strong>Remove title tag</strong>
+              <small>Removes the HTML page title.</small>
+            </span>
+          </label>
+
+          <label class="toggle-card" id="removeScriptsRow">
+            <input id="toggleRemoveScripts" type="checkbox" checked>
+            <span class="toggle-ui"></span>
+            <span class="toggle-copy">
+              <strong>Remove scripts</strong>
+              <small>Removes unsupported web-only code.</small>
+            </span>
+          </label>
+
+          <div class="advanced-panel advanced-panel-nested" id="fullHandlingPanel">
+            <div class="advanced-panel-head">
+              <span class="summary-title">
+                <span>Full email handling</span>
+              </span>
+            </div>
+            <p id="fullHandlingNote" class="helper-note">Controls how the full client email is wrapped.</p>
+
+            <label class="toggle-card" id="literalFullEmailRow">
+              <input id="toggleLiteralFullEmail" type="checkbox" checked>
+              <span class="toggle-ui"></span>
+              <span class="toggle-copy">
+                <strong>Preserve full client template</strong>
+                <small>Keeps the client document structure intact.</small>
+              </span>
+            </label>
+
+            <label class="toggle-card" id="protectBrandLayoutRow">
+              <input id="toggleProtectBrandLayout" type="checkbox" checked>
+              <span class="toggle-ui"></span>
+              <span class="toggle-copy">
+                <strong>Protect brand layout from client CSS</strong>
+                <small>Helps keep client CSS off the brand wrapper.</small>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
     </aside>
 
     <section class="mainpanel">
@@ -338,6 +504,15 @@
         </span>
         <span>Mobile</span>
       </button>
+      <button class="mode-btn" data-preview-mode="compare" type="button">
+        <span class="mode-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect x="2.5" y="4" width="6" height="11" rx="1"></rect>
+            <rect x="11.5" y="4" width="6" height="11" rx="1"></rect>
+          </svg>
+        </span>
+        <span>Compare</span>
+      </button>
       <button class="mode-btn" data-preview-mode="code" type="button">
         <span class="mode-icon" aria-hidden="true">
           <svg viewBox="0 0 20 20" fill="none">
@@ -358,22 +533,67 @@
       </button>
     </div>
 
-    <div class="toolbar-status">
-      <span id="statusPill" class="status-pill">Ready</span>
-      <span id="emailSizePill" class="status-pill size">0 KB</span>
-      <div id="statusMessage" class="status-card">
-        Paste client HTML to begin.
-      </div>
+    <div class="toolbar-status" role="status" aria-live="polite">
+      <span id="adIdStatusPill" class="status-pill status-pill-muted" hidden></span>
+      <span id="statusPill" class="status-pill">Ready • 0 KB</span>
     </div>
   </div>
 
   <div class="preview-shell">
     <div id="previewPane" class="view-pane active">
-      <iframe id="previewFrame" title="Email preview"></iframe>
+      <div id="compareGrid" class="compare-grid">
+        <section class="compare-panel">
+          <div class="compare-label">Generated</div>
+          <iframe id="previewFrame" title="Email preview"></iframe>
+        </section>
+        <section class="compare-panel compare-panel-source">
+          <div class="compare-label">Source</div>
+          <iframe id="sourcePreviewFrame" title="Source preview"></iframe>
+        </section>
+      </div>
     </div>
 
     <div id="codePane" class="view-pane code-pane">
-      <textarea id="codeOutputInner" class="pretty-code pretty-code-area" spellcheck="false" readonly></textarea>
+      <div class="code-workspace">
+        <div class="code-toolbar">
+          <div class="code-toolbar-copy">
+            <div class="compare-label">Editable output</div>
+            <div id="codeEditStatus" class="code-edit-status">Generated output. Click Edit code to make changes.</div>
+          </div>
+        </div>
+        <div class="code-grid">
+          <section class="code-panel">
+            <div class="code-panel-head">
+              <div class="compare-label">HTML</div>
+              <div class="code-toolbar-actions">
+                <button id="editCodeBtn" class="btn btn-subtle btn-small" type="button">
+                  <span id="editCodeBtnIcon" aria-hidden="true">🔒</span>
+                  <span id="editCodeBtnLabel">Edit code</span>
+                </button>
+                <button id="revertCodeBtn" class="btn btn-subtle btn-small" type="button" hidden>Revert changes</button>
+              </div>
+            </div>
+            <div id="codeFindBar" class="code-findbar" hidden>
+              <input id="codeFindInput" class="code-find-input" type="search" placeholder="Find in code" aria-label="Find in code">
+              <div class="code-find-actions">
+                <button id="codeFindPrevBtn" class="btn btn-subtle btn-small" type="button">Prev</button>
+                <button id="codeFindNextBtn" class="btn btn-subtle btn-small" type="button">Next</button>
+                <span id="codeFindCount" class="code-find-count">0 results</span>
+              </div>
+            </div>
+            <div class="code-editor-shell">
+              <pre id="codeHighlight" class="pretty-code pretty-code-highlight" aria-hidden="true"></pre>
+              <textarea id="codeOutputInner" class="pretty-code pretty-code-area" spellcheck="false" readonly></textarea>
+            </div>
+          </section>
+          <section class="code-panel code-preview-panel">
+            <div class="compare-label">Live preview</div>
+            <div class="code-preview-shell">
+              <iframe id="codePreviewFrame" title="Live code preview"></iframe>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -387,43 +607,64 @@
         <h2>About This Tool</h2>
         <p>Maintained by Michelle Kuseske</p>
       </div>
-      <button id="closeHelpBtn" class="btn btn-subtle btn-small" type="button">Close</button>
+      <button id="closeHelpBtn" class="btn btn-subtle btn-small icon-only-btn" type="button" aria-label="Close help">
+        <span class="btn-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M5.5 5.5 14.5 14.5"></path>
+            <path d="M14.5 5.5 5.5 14.5"></path>
+          </svg>
+        </span>
+      </button>
     </div>
 
     <div class="help-doc">
-      <div class="help-meta">Last updated: March 11, 2026</div>
+      <div class="help-meta">Last updated: April 16, 2026</div>
+
+      <section class="help-block help-block-updates">
+        <h3>Latest updates · April 16, 2026</h3>
+        <p>If you used this tool before the latest update, here is what changed:</p>
+        <ul class="help-list">
+          <li>Full branded email is better at keeping the client’s original layout, spacing, buttons, and responsive behavior.</li>
+          <li>Code fragment cleanup is better at keeping responsive styles and hidden code.</li>
+          <li>Code view now lets you edit the code, preview changes live, revert changes, and search.</li>
+          <li>QA checks now appear in a clearer pass/fail checklist and include link checks.</li>
+          <li>Tracking is easier to review. When an Ad ID is added, it now shows in the top right corner of the dashboard.</li>
+          <li>Compare mode was added so you can see the original email next to the updated version and make sure they match.</li>
+          <li>Some controls moved, but the layout is cleaner and easier to navigate. `Help` is now `FAQ`.</li>
+        </ul>
+      </section>
 
       <section class="help-block">
         <h3>What this tool does</h3>
-        <p>This tool helps convert raw email HTML into ready-to-use branded marketing output.</p>
-        <p>Instead of manually editing code, you can paste HTML from a vendor, partner, or content hub and the tool will quickly convert it into either:</p>
+        <p>This tool helps convert client-provided email HTML into ready-to-use branded marketing output.</p>
+        <p>You can paste a full exported email or a content block and quickly turn it into either:</p>
         <ul class="help-list">
           <li>a fully branded email, or</li>
           <li>a clean content fragment for use inside another email template.</li>
         </ul>
-        <p>The tool keeps most of the original content structure intact while applying brand structure, improving stability, and checking for common email issues.</p>
+        <p>The goal is to preserve as much client layout as possible while applying brand structure, cleanup rules, preview tools, and QA checks.</p>
       </section>
 
       <section class="help-block">
         <h3>Output modes</h3>
         <h4>Full branded email</h4>
-        <p>Use this when you want a complete email with the correct brand header and footer automatically applied.</p>
+        <p>Use this when you want a complete email with the selected brand header and footer applied.</p>
         <p>In this mode the tool:</p>
         <ul class="help-list">
-          <li>Preserves most of the HTML you paste</li>
-          <li>Inserts the selected brand header and footer</li>
-          <li>Applies standardized brand wrapping used across supported publications</li>
-          <li>Makes small structural adjustments that help emails render more reliably</li>
+          <li>can preserve the client’s full email structure when needed</li>
+          <li>inserts the selected brand header and footer</li>
+          <li>applies standardized brand wrapping used across supported publications</li>
+          <li>supports tracking and stealth link injection</li>
           <li>Runs QA checks to catch common email issues</li>
         </ul>
-        <p>This is the most common workflow and is typically used when preparing full marketing emails or sponsored sends.</p>
+        <p>This is the main workflow for sponsored sends and other complete branded emails.</p>
         <h4>Code fragment</h4>
         <p>Use this when you only need the content block, not a full email.</p>
         <p>Fragment mode:</p>
         <ul class="help-list">
-          <li>Cleans up the pasted HTML</li>
-          <li>Removes unnecessary or unsupported code</li>
-          <li>Outputs only the content section</li>
+          <li>cleans up the pasted HTML</li>
+          <li>can preserve embedded styles for responsiveness</li>
+          <li>outputs only the cleaned content section</li>
         </ul>
         <p>Fragments cannot be sent on their own. They must be inserted into another email template, such as a template built in the Omeda Email Designer.</p>
       </section>
@@ -434,60 +675,65 @@
           <li>Paste HTML into the input area or drag in an `.html` file.</li>
           <li>Choose your output mode:
             <ul class="help-list">
-              <li>Full branded email for a complete email</li>
-              <li>Code fragment for content used inside another template</li>
+          <li>Full branded email for a complete email</li>
+          <li>Code fragment for content used inside another template</li>
             </ul>
           </li>
           <li>Select a brand when building a full email.</li>
-          <li>Review the preview using Desktop, Mobile, Code, and Dark mode.</li>
+          <li>Review the preview using Desktop, Mobile, Compare, Code, and Dark mode.</li>
           <li>Check any QA warnings.</li>
           <li>Copy or export the finished HTML.</li>
         </ol>
       </section>
 
       <section class="help-block">
-        <h3>What the preview shows</h3>
-        <p>The preview lets you quickly check how the email will appear before exporting.</p>
+        <h3>Preview and code view</h3>
+        <p>The preview lets you check how the email will appear before exporting.</p>
         <p>You can switch between:</p>
         <ul class="help-list">
           <li>Desktop view</li>
           <li>Mobile view</li>
+          <li>Compare view</li>
           <li>Dark mode</li>
-          <li>Code view</li>
+          <li>Code view with editable output, live preview, revert, and find</li>
         </ul>
-        <p>This helps catch layout issues early, before the email is copied into another system.</p>
+        <p>This helps catch layout issues early and gives you a place to make final code edits without leaving the tool.</p>
       </section>
 
       <section class="help-block">
         <h3>QA checks</h3>
         <p>Before exporting, the tool scans the HTML for common email risks such as:</p>
         <ul class="help-list">
+          <li>missing image alt text</li>
+          <li>missing, placeholder, malformed, or non-HTTPS links</li>
           <li>oversized email files</li>
           <li>unsupported or risky HTML</li>
           <li>Outlook rendering issues</li>
           <li>formatting problems that could break layouts</li>
         </ul>
-        <p>These warnings help flag likely issues early, but they do not replace final review.</p>
+        <p>The QA drawer separates fails and passes so you can review issues quickly without losing sight of what already looks good.</p>
       </section>
 
       <section class="help-block">
-        <h3>Advanced tools</h3>
-        <p>The Advanced section includes optional settings for:</p>
+        <h3>Tracking and settings</h3>
+        <p>The tool also includes options for:</p>
         <ul class="help-list">
-          <li>ad tracking inputs</li>
-          <li>stealth links</li>
-          <li>additional code cleanup</li>
+          <li>Ad ID tracking</li>
+          <li>default stealth links in Full branded email, or manual stealth links when added</li>
+          <li>cleanup controls by output mode</li>
+          <li>header and footer color settings for full branded email</li>
         </ul>
-        <p>These tools are available for more complex workflows but are separate from the default branded-email process so they don’t accidentally affect normal production.</p>
+        <p>These settings are there when needed, but the default workflow should still work well for most sends.</p>
       </section>
 
       <section class="help-block">
         <h3>Helpful tips</h3>
         <ul class="help-list">
           <li>Most workflows should use Full branded email mode.</li>
+          <li>If a client gives you a complete exported email, turning on Preserve full client template is often the safest full-mode choice.</li>
           <li>Use Code fragment only when inserting content into an existing email template.</li>
-          <li>Always check mobile and dark mode previews before exporting.</li>
-          <li>QA warnings highlight potential issues but final review is still recommended.</li>
+          <li>Use Code view when you need to make final output edits without changing the original pasted source.</li>
+          <li>Always check mobile, code, and QA before exporting.</li>
         </ul>
       </section>
     </div>

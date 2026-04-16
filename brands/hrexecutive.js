@@ -13,10 +13,10 @@ export const hrexecutive = createBrand({
     /<table[^>]*>\s*[\s\S]*?HRExecMag[\s\S]*?confirmunsubscribelink[\s\S]*?<\/table>\s*/gi
   ],
   header: `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_OUTER_BG__" style="background:__HEADER_OUTER_BG__;">
   <tr>
-    <td align="center" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
+    <td align="center" bgcolor="__HEADER_OUTER_BG__" style="background:__HEADER_OUTER_BG__;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_BG__" style="width:100%;max-width:600px;margin:0 auto;background:__HEADER_BG__;">
         <tr>
           <td style="padding:12px 16px 8px 16px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:13px;line-height:1.4;color:#6f6f6f;text-align:center;">
             To view this email as a web page, click
@@ -44,13 +44,13 @@ export const hrexecutive = createBrand({
 </table>
   `,
   footer: `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_BG__" style="background:__FOOTER_BG__;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_OUTER_BG__" style="background:__FOOTER_OUTER_BG__;">
 
   __FOOTER_DIVIDER__
 
   <tr>
-    <td align="center" bgcolor="__FOOTER_BG__" style="background:__FOOTER_BG__;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
+    <td align="center" bgcolor="__FOOTER_OUTER_BG__" style="background:__FOOTER_OUTER_BG__;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_BG__" style="width:100%;max-width:600px;margin:0 auto;background:__FOOTER_BG__;">
         <tr>
           <td style="padding:24px 24px 12px 24px;text-align:center;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">

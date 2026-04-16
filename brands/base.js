@@ -10,6 +10,8 @@ function buildDividerMarkup(divider = {}) {
 
 function applyBrandOptions(template, options) {
   return (template || "")
+    .replace(/__HEADER_OUTER_BG__/g, options.headerOuterBg || options.headerBg)
+    .replace(/__FOOTER_OUTER_BG__/g, options.footerOuterBg || options.footerBg)
     .replace(/__HEADER_BG__/g, options.headerBg)
     .replace(/__FOOTER_BG__/g, options.footerBg)
     .replace(/__HEADER_DARK_ATTR__/g, options.headerDarkAttr || "")
@@ -69,6 +71,8 @@ export function createBrand(config) {
     name,
     renderHeader(options = {}) {
       return applyBrandOptions(header, {
+        headerOuterBg: options.headerOuterBg || options.headerBg || "#ffffff",
+        footerOuterBg: options.footerOuterBg || options.footerBg || "#ffffff",
         headerBg: options.headerBg || "#ffffff",
         footerBg: options.footerBg || "#ffffff",
         headerDarkAttr: options.headerDarkAttr || "",
@@ -80,6 +84,8 @@ export function createBrand(config) {
     },
     renderFooter(options = {}) {
       return applyBrandOptions(footer, {
+        headerOuterBg: options.headerOuterBg || options.headerBg || "#ffffff",
+        footerOuterBg: options.footerOuterBg || options.footerBg || "#ffffff",
         headerBg: options.headerBg || "#ffffff",
         footerBg: options.footerBg || "#ffffff",
         headerDarkAttr: options.headerDarkAttr || "",

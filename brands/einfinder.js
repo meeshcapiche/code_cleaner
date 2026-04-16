@@ -11,10 +11,10 @@ export const einfinder = createBrand({
     /<table[^>]*>\s*[\s\S]*?JDA-EINFinder-Arc-Logo-RGB-Color\.png[\s\S]*?confirmunsubscribelink[\s\S]*?<\/table>\s*/gi
   ],
   header: `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_OUTER_BG__" style="background:__HEADER_OUTER_BG__;">
   <tr>
-    <td align="center" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
+    <td align="center" bgcolor="__HEADER_OUTER_BG__" style="background:__HEADER_OUTER_BG__;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_BG__" style="width:100%;max-width:600px;margin:0 auto;background:__HEADER_BG__;">
         <tr>
           <td style="padding:5px 16px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:14px;line-height:1.2;color:#6f6f6f;text-align:center;">
             To view this email as a web page, click
@@ -42,13 +42,13 @@ export const einfinder = createBrand({
 </table>
   `,
   footer: `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_BG__" style="background:__FOOTER_BG__;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_OUTER_BG__" style="background:__FOOTER_OUTER_BG__;">
 
   __FOOTER_DIVIDER__
 
   <tr>
-    <td align="center" bgcolor="__FOOTER_BG__" style="background:__FOOTER_BG__;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
+    <td align="center" bgcolor="__FOOTER_OUTER_BG__" style="background:__FOOTER_OUTER_BG__;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_BG__" style="width:100%;max-width:600px;margin:0 auto;background:__FOOTER_BG__;">
         <tr>
           <td style="padding:10px 16px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:14px;line-height:1.2;color:#6f6f6f;text-align:left;">
             This email was sent to: @{Email Name}@<br>

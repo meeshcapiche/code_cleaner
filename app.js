@@ -31,19 +31,36 @@ window.addEventListener("DOMContentLoaded", () => {
   const previewFrame = document.getElementById("previewFrame");
   const qaReport = document.getElementById("qaReport");
   const qaCount = document.getElementById("qaCount");
+  const qaSummary = document.getElementById("qaSummary");
+  const qaSummaryText = document.getElementById("qaSummaryText");
   const statusPill = document.getElementById("statusPill");
-  const emailSizePill = document.getElementById("emailSizePill");
+  const adIdStatusPill = document.getElementById("adIdStatusPill");
   const statusMessage = document.getElementById("statusMessage");
   const helpBtn = document.getElementById("helpBtn");
+  const helpUpdateBadge = document.getElementById("helpUpdateBadge");
   const helpDialog = document.getElementById("helpDialog");
   const closeHelpBtn = document.getElementById("closeHelpBtn");
+  const cleanupSettingsBtn = document.getElementById("cleanupSettingsBtn");
+  const cleanupDialog = document.getElementById("cleanupDialog");
+  const closeCleanupBtn = document.getElementById("closeCleanupBtn");
+  const trackingToolBtn = document.getElementById("trackingToolBtn");
+  const trackingDialog = document.getElementById("trackingDialog");
+  const closeTrackingBtn = document.getElementById("closeTrackingBtn");
+  const qaToolBtn = document.getElementById("qaToolBtn");
+  const qaDialog = document.getElementById("qaDialog");
+  const closeQaBtn = document.getElementById("closeQaBtn");
   const brandSelect = document.getElementById("brandSelect");
   const brandHelperText = document.getElementById("brandHelperText");
   const toggleTemplateOptionsBtn = document.getElementById("toggleTemplateOptionsBtn");
-  const templateControls = document.getElementById("templateControls");
+  const templateDialog = document.getElementById("templateDialog");
+  const closeTemplateBtn = document.getElementById("closeTemplateBtn");
   const resetTemplateOptionsBtn = document.getElementById("resetTemplateOptionsBtn");
+  const headerOuterBgColor = document.getElementById("headerOuterBgColor");
+  const footerOuterBgColor = document.getElementById("footerOuterBgColor");
   const headerBgColor = document.getElementById("headerBgColor");
   const footerBgColor = document.getElementById("footerBgColor");
+  const headerOuterBgValue = document.getElementById("headerOuterBgValue");
+  const footerOuterBgValue = document.getElementById("footerOuterBgValue");
   const headerBgValue = document.getElementById("headerBgValue");
   const footerBgValue = document.getElementById("footerBgValue");
   const toggleMatchFooterColor = document.getElementById("toggleMatchFooterColor");
@@ -57,50 +74,96 @@ window.addEventListener("DOMContentLoaded", () => {
   const downloadBtn = document.getElementById("downloadBtn");
   const copyBtnLabel = copyBtn.querySelector(".btn-label");
   const previewPane = document.getElementById("previewPane");
+  const compareGrid = document.getElementById("compareGrid");
   const codePane = document.getElementById("codePane");
   const codeOutputInner = document.getElementById("codeOutputInner");
+  const codeHighlight = document.getElementById("codeHighlight");
+  const codePreviewFrame = document.getElementById("codePreviewFrame");
+  const codeEditStatus = document.getElementById("codeEditStatus");
+  const editCodeBtn = document.getElementById("editCodeBtn");
+  const editCodeBtnIcon = document.getElementById("editCodeBtnIcon");
+  const editCodeBtnLabel = document.getElementById("editCodeBtnLabel");
+  const revertCodeBtn = document.getElementById("revertCodeBtn");
+  const codeFindBar = document.getElementById("codeFindBar");
+  const codeFindInput = document.getElementById("codeFindInput");
+  const codeFindPrevBtn = document.getElementById("codeFindPrevBtn");
+  const codeFindNextBtn = document.getElementById("codeFindNextBtn");
+  const codeFindCount = document.getElementById("codeFindCount");
+  const sourcePreviewFrame = document.getElementById("sourcePreviewFrame");
   const outputModeSwitch = document.getElementById("outputModeSwitch");
+  const outputModeHint = document.getElementById("outputModeHint");
   const dropWrap = document.getElementById("dropWrap");
   const clearInputBtn = document.getElementById("clearInputBtn");
-  const webcastUrlInput = document.getElementById("webcastUrlInput");
-  const webcastJsonInput = document.getElementById("webcastJsonInput");
-  const webcastEventType = document.getElementById("webcastEventType");
-  const webcastHeadline = document.getElementById("webcastHeadline");
-  const webcastDate = document.getElementById("webcastDate");
-  const webcastTime = document.getElementById("webcastTime");
-  const webcastDuration = document.getElementById("webcastDuration");
-  const webcastBody = document.getElementById("webcastBody");
-  const webcastSponsorLogo = document.getElementById("webcastSponsorLogo");
-  const webcastSpeakerImage = document.getElementById("webcastSpeakerImage");
-  const webcastSpeakerName = document.getElementById("webcastSpeakerName");
-  const webcastSpeakerRole = document.getElementById("webcastSpeakerRole");
-  const webcastCtaUrl = document.getElementById("webcastCtaUrl");
-  const webcastCtaLabel = document.getElementById("webcastCtaLabel");
+  const cleanupModeTitle = document.getElementById("cleanupModeTitle");
+  const cleanupModeNote = document.getElementById("cleanupModeNote");
+  const keepStylesRow = document.getElementById("keepStylesRow");
+  const removePreviewRow = document.getElementById("removePreviewRow");
+  const removeTitleRow = document.getElementById("removeTitleRow");
+  const removeScriptsRow = document.getElementById("removeScriptsRow");
+  const fullHandlingPanel = document.getElementById("fullHandlingPanel");
+  const fullHandlingNote = document.getElementById("fullHandlingNote");
+  const literalFullEmailRow = document.getElementById("literalFullEmailRow");
+  const protectBrandLayoutRow = document.getElementById("protectBrandLayoutRow");
+  let floatingTooltip = null;
+  let activeTooltipTrigger = null;
 
   const STORAGE_KEY = "email-assembly-studio-state-v2";
+  const HELP_UPDATES_VERSION = "2026-04-06";
+  const HELP_UPDATES_STORAGE_KEY = "email-assembly-studio-help-updates-version";
   const DEFAULT_BRAND = "thinkadvisor";
-  const outputStore = { html: "" };
-  let builderMode = "cleaner";
+  const outputStore = { html: "", generatedHtml: "", editedHtml: "", isEdited: false };
   let previewMode = "desktop";
+  let lastVisualPreviewMode = "desktop";
   let outputMode = "full";
+  let cleanupDrawerOpen = false;
+  let templateDrawerOpen = false;
+  let trackingDrawerOpen = false;
+  let qaDrawerOpen = false;
   let lastCleanerOutputMode = "full";
   let lastCleanerShowDividers = true;
-  let webcastSpeakers = [];
   let isRestoringState = false;
-  let templateOptionsOpen = false;
+  let codeEditDebounceId = null;
+  let isCodeEditing = false;
+  let codeScrollSyncFrame = null;
+  let codeFindMatches = [];
+  let codeFindIndex = -1;
+  let codeFindQuery = "";
+  let currentStatusLevel = "info";
+  let currentStatusText = "Ready";
+  let currentStatusSizeText = "0 KB";
   const defaultTemplateOptions = {
+    headerOuterBg: "#ffffff",
+    footerOuterBg: "#ffffff",
     headerBg: "#ffffff",
     footerBg: "#ffffff",
-    matchFooterColor: false,
+    matchFooterColor: true,
     showDividers: true
   };
   const defaultCleanupOptions = {
+    literalFullEmail: true,
     keepStyles: true,
     removePreview: true,
     removeTitle: true,
-    removeScripts: true
+    removeScripts: true,
+    protectBrandLayout: true
   };
-  const cleanupToggleIds = ["toggleKeepStyles", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveScripts"];
+  const defaultCleanupOptionsByMode = {
+    fragment: {
+      keepStyles: defaultCleanupOptions.keepStyles,
+      removePreview: defaultCleanupOptions.removePreview,
+      removeTitle: defaultCleanupOptions.removeTitle,
+      removeScripts: defaultCleanupOptions.removeScripts
+    },
+    full: {
+      literalFullEmail: defaultCleanupOptions.literalFullEmail,
+      removePreview: defaultCleanupOptions.removePreview,
+      removeTitle: defaultCleanupOptions.removeTitle,
+      removeScripts: defaultCleanupOptions.removeScripts,
+      protectBrandLayout: defaultCleanupOptions.protectBrandLayout
+    }
+  };
+  const cleanupToggleIds = ["toggleKeepStyles", "toggleRemovePreview", "toggleRemoveTitle", "toggleRemoveScripts", "toggleProtectBrandLayout"];
+  let cleanupOptionsByMode = structuredClone(defaultCleanupOptionsByMode);
 
   function populateBrandOptions() {
     const currentValue = brandSelect.value;
@@ -126,24 +189,31 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateColorLabels() {
+    if (headerOuterBgValue && headerOuterBgColor) headerOuterBgValue.textContent = formatHex(headerOuterBgColor.value);
+    if (footerOuterBgValue && footerOuterBgColor) footerOuterBgValue.textContent = formatHex(footerOuterBgColor.value);
     if (headerBgValue && headerBgColor) headerBgValue.textContent = formatHex(headerBgColor.value);
     if (footerBgValue && footerBgColor) footerBgValue.textContent = formatHex(footerBgColor.value);
   }
 
   function syncFooterColorState() {
-    if (!footerBgColor) return;
+    if (!footerBgColor || !footerOuterBgColor) return;
 
     const shouldMatch = !!toggleMatchFooterColor?.checked;
-    if (shouldMatch && headerBgColor) {
+    if (shouldMatch && headerBgColor && headerOuterBgColor) {
+      footerOuterBgColor.value = headerOuterBgColor.value;
       footerBgColor.value = headerBgColor.value;
     }
 
+    footerOuterBgColor.disabled = shouldMatch;
     footerBgColor.disabled = shouldMatch;
+    footerOuterBgColor.closest(".field-card")?.classList.toggle("is-disabled", shouldMatch);
     footerBgColor.closest(".field-card")?.classList.toggle("is-disabled", shouldMatch);
     updateColorLabels();
   }
 
   function resetTemplateOptions() {
+    if (headerOuterBgColor) headerOuterBgColor.value = defaultTemplateOptions.headerOuterBg;
+    if (footerOuterBgColor) footerOuterBgColor.value = defaultTemplateOptions.footerOuterBg;
     if (headerBgColor) headerBgColor.value = defaultTemplateOptions.headerBg;
     if (footerBgColor) footerBgColor.value = defaultTemplateOptions.footerBg;
     if (toggleMatchFooterColor) toggleMatchFooterColor.checked = defaultTemplateOptions.matchFooterColor;
@@ -153,15 +223,70 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function resetCleanupOptions() {
-    const keepStylesToggle = document.getElementById("toggleKeepStyles");
-    const removePreviewToggle = document.getElementById("toggleRemovePreview");
-    const removeTitleToggle = document.getElementById("toggleRemoveTitle");
-    const removeScriptsToggle = document.getElementById("toggleRemoveScripts");
+    cleanupOptionsByMode = structuredClone(defaultCleanupOptionsByMode);
+    applyCleanupSettingsForMode(outputMode);
+  }
 
-    if (keepStylesToggle) keepStylesToggle.checked = defaultCleanupOptions.keepStyles;
-    if (removePreviewToggle) removePreviewToggle.checked = defaultCleanupOptions.removePreview;
-    if (removeTitleToggle) removeTitleToggle.checked = defaultCleanupOptions.removeTitle;
-    if (removeScriptsToggle) removeScriptsToggle.checked = defaultCleanupOptions.removeScripts;
+  function getCleanupToggleRefs() {
+    return {
+      literalFullEmail: toggleLiteralFullEmail,
+      keepStyles: document.getElementById("toggleKeepStyles"),
+      removePreview: document.getElementById("toggleRemovePreview"),
+      removeTitle: document.getElementById("toggleRemoveTitle"),
+      removeScripts: document.getElementById("toggleRemoveScripts"),
+      protectBrandLayout: document.getElementById("toggleProtectBrandLayout")
+    };
+  }
+
+  function getCleanupDefaultsForMode(mode) {
+    return defaultCleanupOptionsByMode[mode === "fragment" ? "fragment" : "full"];
+  }
+
+  function captureCleanupSettingsForMode(mode) {
+    const refs = getCleanupToggleRefs();
+
+    if (mode === "fragment") {
+      return {
+        keepStyles: !!refs.keepStyles?.checked,
+        removePreview: !!refs.removePreview?.checked,
+        removeTitle: !!refs.removeTitle?.checked,
+        removeScripts: !!refs.removeScripts?.checked
+      };
+    }
+
+    return {
+      literalFullEmail: !!refs.literalFullEmail?.checked,
+      removePreview: !!refs.removePreview?.checked,
+      removeTitle: !!refs.removeTitle?.checked,
+      removeScripts: !!refs.removeScripts?.checked,
+      protectBrandLayout: !!refs.protectBrandLayout?.checked
+    };
+  }
+
+  function applyCleanupSettingsForMode(mode) {
+    const refs = getCleanupToggleRefs();
+    const defaults = getCleanupDefaultsForMode(mode);
+    const saved = cleanupOptionsByMode[mode === "fragment" ? "fragment" : "full"] || defaults;
+
+    if (mode === "fragment") {
+      if (refs.keepStyles) refs.keepStyles.checked = saved.keepStyles ?? defaults.keepStyles;
+      if (refs.removePreview) refs.removePreview.checked = saved.removePreview ?? defaults.removePreview;
+      if (refs.removeTitle) refs.removeTitle.checked = saved.removeTitle ?? defaults.removeTitle;
+      if (refs.removeScripts) refs.removeScripts.checked = saved.removeScripts ?? defaults.removeScripts;
+      if (refs.literalFullEmail) refs.literalFullEmail.checked = cleanupOptionsByMode.full.literalFullEmail ?? defaultCleanupOptionsByMode.full.literalFullEmail;
+      if (refs.protectBrandLayout) refs.protectBrandLayout.checked = cleanupOptionsByMode.full.protectBrandLayout ?? defaultCleanupOptionsByMode.full.protectBrandLayout;
+    } else {
+      if (refs.literalFullEmail) refs.literalFullEmail.checked = saved.literalFullEmail ?? defaults.literalFullEmail;
+      if (refs.removePreview) refs.removePreview.checked = saved.removePreview ?? defaults.removePreview;
+      if (refs.removeTitle) refs.removeTitle.checked = saved.removeTitle ?? defaults.removeTitle;
+      if (refs.removeScripts) refs.removeScripts.checked = saved.removeScripts ?? defaults.removeScripts;
+      if (refs.protectBrandLayout) refs.protectBrandLayout.checked = saved.protectBrandLayout ?? defaults.protectBrandLayout;
+      if (refs.keepStyles) refs.keepStyles.checked = cleanupOptionsByMode.fragment.keepStyles ?? defaultCleanupOptionsByMode.fragment.keepStyles;
+    }
+  }
+
+  function saveCleanupSettingsForMode(mode) {
+    cleanupOptionsByMode[mode === "fragment" ? "fragment" : "full"] = captureCleanupSettingsForMode(mode);
   }
 
   function extractStyleBlocks(html) {
@@ -198,6 +323,16 @@ window.addEventListener("DOMContentLoaded", () => {
     const source = headHtml || "";
     const preserved = [];
 
+    source.replace(/<meta\b[^>]*>\s*/gi, match => {
+      preserved.push(match.trim());
+      return match;
+    });
+
+    source.replace(/<link\b[^>]*>\s*/gi, match => {
+      preserved.push(match.trim());
+      return match;
+    });
+
     source.replace(/<style\b[\s\S]*?<\/style>\s*/gi, match => {
       preserved.push(match.trim());
       return match;
@@ -211,6 +346,36 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     return preserved.join("\n");
+  }
+
+  function sanitizeBrandSensitiveCss(cssText) {
+    return String(cssText || "").replace(/(^|})\s*([^@}{]+)\{([^{}]*)\}/g, (match, prefix, selectors, declarations) => {
+      if (!/(^|,)\s*table\s*(?=,|$)/i.test(selectors)) {
+        return match;
+      }
+
+      const cleanedDeclarations = declarations
+        .replace(/(^|;)\s*table-layout\s*:\s*fixed\s*;?/gi, "$1")
+        .replace(/;;+/g, ";")
+        .trim()
+        .replace(/^;|;$/g, "")
+        .trim();
+
+      if (cleanedDeclarations === declarations.trim()) {
+        return match;
+      }
+
+      return cleanedDeclarations
+        ? `${prefix} ${selectors.trim()} { ${cleanedDeclarations} }`
+        : prefix || "";
+    });
+  }
+
+  function sanitizeStyleMarkupForBrandLayout(markup) {
+    return String(markup || "").replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (match, attrs, cssText) => {
+      const sanitizedCss = sanitizeBrandSensitiveCss(cssText);
+      return `<style${attrs}>${sanitizedCss}</style>`;
+    });
   }
 
   function buildMergedBodyAttributes(sourceAttrs) {
@@ -249,15 +414,72 @@ window.addEventListener("DOMContentLoaded", () => {
       .replace(/<script\b[^>]*\/?>\s*/gi, "");
   }
 
+  function isLikelyPreheaderContent(innerHtml) {
+    const content = String(innerHtml || "");
+    const normalizedText = content
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/[\u00a0\u200b\u00ad]/g, " ")
+      .trim();
+
+    return (
+      !/<a\b/i.test(content) &&
+      !/<img\b/i.test(content) &&
+      !/<table\b/i.test(content) &&
+      normalizedText.length > 0 &&
+      normalizedText.length <= 400
+    );
+  }
+
   function removeClientPreheader(html) {
     let s = html || "";
-    s = s.replace(/<span\b[^>]*style=["'][^"']*(display\s*:\s*none|mso-hide\s*:\s*all|opacity\s*:\s*0)[^"']*["'][^>]*>[\s\S]*?<\/span>/gi, "");
-    s = s.replace(/<div\b[^>]*style=["'][^"']*(display\s*:\s*none|mso-hide\s*:\s*all|opacity\s*:\s*0)[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, "");
+
+    const hiddenPreheaderPattern = /<(span|div)\b([^>]*)style=["'][^"']*(display\s*:\s*none|mso-hide\s*:\s*all|opacity\s*:\s*0)[^"']*["'][^>]*>([\s\S]*?)<\/\1>/gi;
+
+    s = s.replace(hiddenPreheaderPattern, (match, tagName, attrs, hiddenRule, innerHtml) => {
+      return isLikelyPreheaderContent(innerHtml) ? "" : match;
+    });
+
     return s.trim();
   }
 
-  function stripKnownBrandWrappers(html) {
+  function insertTrackingMarkupNearTop(html, trackingMarkup) {
+    const source = String(html || "");
+    if (!trackingMarkup) return source;
+
+    let inserted = false;
+    const hiddenPreheaderPattern = /<(span|div)\b([^>]*)style=["'][^"']*(display\s*:\s*none|mso-hide\s*:\s*all|opacity\s*:\s*0)[^"']*["'][^>]*>([\s\S]*?)<\/\1>/gi;
+
+    const withTrackingAfterPreheader = source.replace(hiddenPreheaderPattern, (match, tagName, attrs, hiddenRule, innerHtml) => {
+      if (inserted || !isLikelyPreheaderContent(innerHtml)) {
+        return match;
+      }
+
+      inserted = true;
+      return `${match}\n${trackingMarkup}`;
+    });
+
+    if (inserted) {
+      return withTrackingAfterPreheader;
+    }
+
+    return `${trackingMarkup}\n${source}`;
+  }
+
+  function stripKnownBrandWrappers(html, options = {}) {
+    const preserveLayoutScaffolding = !!options.preserveLayoutScaffolding;
+
     return Object.values(brandPresets).reduce((current, brand) => {
+      if (!brand) return current;
+
+      if (preserveLayoutScaffolding && Array.isArray(brand.matchers)) {
+        let cleaned = stripInjectedCobrandBlocks(current);
+        brand.matchers.forEach(matcher => {
+          cleaned = cleaned.replace(matcher, "");
+        });
+        return cleaned;
+      }
+
       if (typeof brand.stripWrappedTemplate === "function") {
         return brand.stripWrappedTemplate(current);
       }
@@ -268,6 +490,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function getEffectiveStealthLink() {
     const manualValue = stealthLinkInput?.value.trim() || "";
     if (manualValue) return manualValue;
+    if (outputMode === "fragment") return "";
 
     const brand = brandPresets[brandSelect.value];
     return brand?.stealthLink || "";
@@ -282,6 +505,11 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (outputMode === "fragment") {
+      stealthHelperText.textContent = "No default stealth link is used in Code fragment mode.";
+      return;
+    }
+
     if (brand?.stealthLink) {
       stealthHelperText.textContent = `Default stealth link ready for ${brand.name}. Leave the field blank to use it automatically.`;
       return;
@@ -290,336 +518,121 @@ window.addEventListener("DOMContentLoaded", () => {
     stealthHelperText.textContent = "No default stealth link is available for the current selection.";
   }
 
+  function ensureFloatingTooltip() {
+    if (floatingTooltip) return floatingTooltip;
+
+    floatingTooltip = document.createElement("div");
+    floatingTooltip.className = "floating-tooltip";
+    floatingTooltip.setAttribute("role", "tooltip");
+    document.body.appendChild(floatingTooltip);
+    return floatingTooltip;
+  }
+
+  function hideFloatingTooltip() {
+    if (!floatingTooltip) return;
+    floatingTooltip.classList.remove("is-visible");
+    floatingTooltip.textContent = "";
+    activeTooltipTrigger?.setAttribute("aria-expanded", "false");
+    activeTooltipTrigger = null;
+  }
+
+  function showFloatingTooltip(trigger) {
+    if (!trigger) return;
+
+    const text = trigger.dataset.tooltip?.trim();
+    if (!text) return;
+
+    const tooltip = ensureFloatingTooltip();
+    tooltip.textContent = text;
+    tooltip.classList.add("is-visible");
+
+    const rect = trigger.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const top = Math.max(8, rect.top - tooltipRect.height - 12);
+    const left = Math.min(
+      window.innerWidth - tooltipRect.width - 8,
+      Math.max(8, rect.right - tooltipRect.width + 10)
+    );
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+
+    if (top <= 12) {
+      tooltip.style.top = `${Math.min(window.innerHeight - tooltipRect.height - 8, rect.bottom + 12)}px`;
+    }
+
+    if (activeTooltipTrigger && activeTooltipTrigger !== trigger) {
+      activeTooltipTrigger.setAttribute("aria-expanded", "false");
+    }
+
+    activeTooltipTrigger = trigger;
+    trigger.setAttribute("aria-expanded", "true");
+  }
+
+  function closeInfoTips() {
+    hideFloatingTooltip();
+  }
+
   function buildTrackingMarkup() {
     const adId = (adIdInput?.value || "").trim();
     const stealthLink = getEffectiveStealthLink();
     const blocks = [];
 
     if (adId) {
-      blocks.push(`<p>\n  <!-- // ADD ID -->\n  <input value="${adId.replace(/"/g, "&quot;")}" name="advertiserid" type="hidden">\n  <!-- // ADD ID -->\n</p>`);
+      blocks.push(`<!-- // ADD ID -->\n<input value="${adId.replace(/"/g, "&quot;")}" name="advertiserid" type="hidden">\n<!-- // ADD ID -->`);
     }
 
     if (stealthLink) {
       const safeLink = stealthLink.replace(/"/g, "&quot;");
-      blocks.push(`<div style="display:none;">\n  <a href="${safeLink}" style="display:none;visibility:hidden;"></a>\n</div>`);
+      blocks.push(`<!-- // STEALTH LINK -->\n<div style="display:none;visibility:hidden;opacity:0;max-height:0;max-width:0;overflow:hidden;font-size:0;line-height:0;mso-hide:all;">\n  <a href="${safeLink}" aria-hidden="true" style="display:none;visibility:hidden;opacity:0;font-size:0;line-height:0;text-decoration:none;">&#8203;</a>\n</div>\n<!-- // STEALTH LINK -->`);
     }
 
     return blocks.join("\n");
   }
 
-  function normalizeOn24Url(url) {
-    if (!url) return "";
-    if (/^https?:\/\//i.test(url)) return url;
-    if (url.startsWith("/")) return `https://event.on24.com${url}`;
-    return url;
+  function stripInjectedCobrandBlocks(html) {
+    let source = String(html || "");
+    source = source.replace(/<!--\s*COBRAND_HEADER_START\s*-->[\s\S]*?<!--\s*COBRAND_HEADER_END\s*-->\s*/gi, "");
+    source = source.replace(/<!--\s*COBRAND_FOOTER_START\s*-->[\s\S]*?<!--\s*COBRAND_FOOTER_END\s*-->\s*/gi, "");
+    source = source.replace(/<!--\s*\/\/ ADD ID\s*-->[\s\S]*?<!--\s*\/\/ ADD ID\s*-->\s*/gi, "");
+    source = source.replace(/<!--\s*\/\/ STEALTH LINK\s*-->[\s\S]*?<!--\s*\/\/ STEALTH LINK\s*-->\s*/gi, "");
+    source = source.replace(/<div[^>]*>\s*<a[^>]*>\s*Stealth tracking link\s*<\/a>\s*<\/div>\s*/gi, "");
+    return source;
   }
 
-  function normalizeOn24HtmlAssets(html) {
-    return String(html || "").replace(
-      /\b(src|href)=["'](\/[^"']*)["']/gi,
-      (_, attr, value) => `${attr}="${normalizeOn24Url(value)}"`
-    );
-  }
+  function injectBrandIntoClientDocument(html, { brandHeader, brandFooter, trackingMarkup }) {
+    let source = stripInjectedCobrandBlocks(html || "").trim();
+    if (!source) return "";
 
-  function extractOn24Identifiers(url) {
-    const match = (url || "").match(/\/wcc\/r\/(\d+)\/([A-Z0-9]+)/i);
-    return match ? { eventId: match[1], key: match[2] } : null;
-  }
-
-  function formatDurationLabel(minutesValue) {
-    const minutes = Number(minutesValue || 0);
-    if (!minutes) return "";
-    if (minutes % 60 === 0) {
-      const hours = minutes / 60;
-      return `${hours} hour${hours === 1 ? "" : "s"}`;
-    }
-    return `${minutes} minutes`;
-  }
-
-  function extractFirstImageFromHtml(html) {
-    const match = (html || "").match(/<img\b[^>]*src=["']([^"']+)["']/i);
-    return match ? normalizeOn24Url(match[1]) : "";
-  }
-
-  function extractSponsorSection(html) {
-    const source = String(html || "").trim();
-    if (!source) {
-      return { bodyHtml: "", sponsorLogo: "" };
-    }
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = source;
-
-    const sponsorMarkers = Array.from(wrapper.querySelectorAll("*")).filter(node =>
-      /(this event is sponsored by|sponsored by\s*:?\s*$)/i.test((node.textContent || "").trim())
-    );
-    let sponsorLogo = "";
-
-    function findRemovalRoot(node) {
-      return node.closest("table, tr, td, section, article, div, p, h1, h2, h3, h4, h5, h6, li") || node;
+    const hasBody = /<body\b[^>]*>/i.test(source) && /<\/body>/i.test(source);
+    if (!hasBody) {
+      return "";
     }
 
-    function isImageOnlyBlock(node) {
-      if (!node) return false;
-      const text = (node.textContent || "").replace(/\s+/g, "").trim();
-      return !!node.querySelector("img") && !text;
-    }
-
-    sponsorMarkers.forEach(marker => {
-      let root = findRemovalRoot(marker);
-      if (!sponsorLogo) {
-        sponsorLogo = extractFirstImageFromHtml(root.outerHTML);
-      }
-
-      let sibling = root.nextElementSibling;
-      let checkedSiblings = 0;
-      while (sibling && checkedSiblings < 2) {
-        const nextSibling = sibling.nextElementSibling;
-        if (!sponsorLogo) {
-          sponsorLogo = extractFirstImageFromHtml(sibling.outerHTML);
-        }
-        if (isImageOnlyBlock(sibling) || /sponsor/i.test(sibling.className || "")) {
-          sibling.remove();
-        }
-        sibling = nextSibling;
-        checkedSiblings += 1;
-      }
-
-      root.remove();
+    source = source.replace(/(<body\b[^>]*>)([\s\S]*?)(<\/body>)/i, (match, bodyOpen, bodyInner, bodyClose) => {
+      const trackedBodyInner = insertTrackingMarkupNearTop(bodyInner, trackingMarkup);
+      return `${bodyOpen}
+<!-- COBRAND_HEADER_START -->
+${brandHeader}
+<!-- COBRAND_HEADER_END -->
+${trackedBodyInner}
+<!-- COBRAND_FOOTER_START -->
+${brandFooter}
+<!-- COBRAND_FOOTER_END -->
+${bodyClose}`;
     });
 
-    Array.from(wrapper.querySelectorAll("p, div, h1, h2, h3, h4, h5, h6, td")).forEach(node => {
-      const text = (node.textContent || "").replace(/\s+/g, " ").trim();
-      if (/^(this event is sponsored by|sponsored by):?$/i.test(text)) {
-        node.remove();
-      }
-    });
-
-    Array.from(wrapper.querySelectorAll("div, table, tr, td, p")).forEach(node => {
-      const text = (node.textContent || "").replace(/\s+/g, " ").trim();
-      const hasImage = !!node.querySelector("img");
-      if (!hasImage) return;
-
-      const looksLikeSponsorCard =
-        /^(sponsored by|this event is sponsored by):?$/i.test(text) ||
-        (/sponsored by/i.test(text) && text.length < 40);
-
-      if (!looksLikeSponsorCard) return;
-
-      if (!sponsorLogo) {
-        sponsorLogo = extractFirstImageFromHtml(node.outerHTML);
-      }
-
-      node.remove();
-    });
-
-    Array.from(wrapper.querySelectorAll("img")).forEach(img => {
-      if (!sponsorLogo) return;
-      const src = normalizeOn24Url(img.getAttribute("src") || "");
-      if (src === sponsorLogo && !img.closest("[data-webcast-sponsor]")) {
-        const parentBlock = img.closest("p, div, td, table");
-        if (parentBlock && isImageOnlyBlock(parentBlock)) {
-          parentBlock.remove();
-        }
-      }
-    });
-
-    const bodyHtml = wrapper.innerHTML
-      .replace(/<(p|div|td|tr|table)\b[^>]*>\s*(?:&nbsp;|\s|<br\s*\/?>)*<\/\1>/gi, "")
-      .trim();
-
-    return { bodyHtml, sponsorLogo };
-  }
-
-  function parseOn24EventPayload(payload) {
-    const event = payload?.event;
-    const session = event?.session || {};
-    const durationValue = event?.extendedeventinfo?.eventinfo?.sessionLengthMinutes?.value || "";
-    const normalizedBodyHtml = normalizeOn24HtmlAssets(session.eventAbstract || "");
-    const sponsorSection = extractSponsorSection(normalizedBodyHtml);
-    const speakers = Array.isArray(session.speakers)
-      ? session.speakers.map(speaker => ({
-          name: speaker?.name || "",
-          role: [speaker?.title, speaker?.company].filter(Boolean).join(", "),
-          image: normalizeOn24Url(speaker?.photo || "")
-        })).filter(speaker => speaker.name || speaker.role || speaker.image)
-      : [];
-    const firstSpeaker = speakers[0] || {};
-
-    return {
-      eventType: event?.custom2 || "Webinar",
-      headline: event?.description || "",
-      date: event?.localizedeventdate || "",
-      time: event?.localizedeventtime || "",
-      duration: formatDurationLabel(durationValue),
-      bodyHtml: sponsorSection.bodyHtml,
-      sponsorLogo: sponsorSection.sponsorLogo || extractFirstImageFromHtml(normalizedBodyHtml),
-      speakers,
-      speakerImage: firstSpeaker.image || "",
-      speakerName: firstSpeaker.name || "",
-      speakerRole: firstSpeaker.role || "",
-      ctaUrl: webcastUrlInput?.value.trim() || event?.registrationurl || ""
-    };
-  }
-
-  function populateWebcastFields(data = {}) {
-    webcastSpeakers = Array.isArray(data.speakers) ? data.speakers : [];
-    if (webcastEventType) webcastEventType.value = data.eventType || webcastEventType.value || "Webinar";
-    if (webcastHeadline) webcastHeadline.value = data.headline || "";
-    if (webcastDate) webcastDate.value = data.date || "";
-    if (webcastTime) webcastTime.value = data.time || "";
-    if (webcastDuration) webcastDuration.value = data.duration || "";
-    if (webcastBody) webcastBody.value = data.bodyHtml || "";
-    if (webcastSponsorLogo) webcastSponsorLogo.value = data.sponsorLogo || "";
-    if (webcastSpeakerImage) webcastSpeakerImage.value = data.speakerImage || "";
-    if (webcastSpeakerName) webcastSpeakerName.value = data.speakerName || "";
-    if (webcastSpeakerRole) webcastSpeakerRole.value = data.speakerRole || "";
-    if (webcastCtaUrl) webcastCtaUrl.value = data.ctaUrl || webcastUrlInput?.value.trim() || "";
-    if (webcastCtaLabel && !webcastCtaLabel.value) webcastCtaLabel.value = "Register now";
-  }
-
-  function getWebcastFields() {
-    const fallbackSpeaker = {
-      image: webcastSpeakerImage?.value.trim() || "",
-      name: webcastSpeakerName?.value.trim() || "",
-      role: webcastSpeakerRole?.value.trim() || ""
-    };
-    const speakers = webcastSpeakers.length
-      ? webcastSpeakers.filter(speaker => speaker?.name || speaker?.role || speaker?.image)
-      : ((fallbackSpeaker.name || fallbackSpeaker.role || fallbackSpeaker.image) ? [fallbackSpeaker] : []);
-
-    return {
-      eventType: webcastEventType?.value.trim() || "Webinar",
-      headline: webcastHeadline?.value.trim() || "",
-      date: webcastDate?.value.trim() || "",
-      time: webcastTime?.value.trim() || "",
-      duration: webcastDuration?.value.trim() || "",
-      bodyHtml: webcastBody?.value.trim() || "",
-      sponsorLogo: webcastSponsorLogo?.value.trim() || "",
-      speakers,
-      speakerImage: fallbackSpeaker.image,
-      speakerName: fallbackSpeaker.name,
-      speakerRole: fallbackSpeaker.role,
-      ctaUrl: webcastCtaUrl?.value.trim() || "",
-      ctaLabel: webcastCtaLabel?.value.trim() || "Register now"
-    };
-  }
-
-  function getWebcastTheme(brandKey) {
-    if (brandKey === "hrexecutive") {
-      return {
-        accent: "#8b2436",
-        accentDark: "#6f1c2b",
-        buttonAccent: "#c33652",
-        buttonAccentDark: "#a92d46",
-        labelBackground: "#fdf0f2",
-        labelText: "#8b2436",
-        metaBackground: "#f7f7f8",
-        metaText: "#374151",
-        takeawayBackground: "#f7eaed",
-        takeawayBorder: "#ebc6cf",
-        takeawayText: "#6e2030",
-        cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(139,36,54,0.06)"
-      };
+    if (!/<!doctype/i.test(source)) {
+      source = `<!DOCTYPE html>\n${source}`;
     }
 
-    if (brandKey === "districtadministration") {
-      return {
-        accent: "#1f4f8c",
-        accentDark: "#16385f",
-        buttonAccent: "#1f4f8c",
-        buttonAccentDark: "#16385f",
-        labelBackground: "#edf4fb",
-        labelText: "#1f4f8c",
-        metaBackground: "#f7f8fb",
-        metaText: "#374151",
-        takeawayBackground: "#eef4fb",
-        takeawayBorder: "#d4e2f5",
-        takeawayText: "#123f73",
-        cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(31,79,140,0.05)"
-      };
-    }
-
-    if (brandKey === "universitybusiness") {
-      return {
-        accent: "#234a86",
-        accentDark: "#17325b",
-        buttonAccent: "#234a86",
-        buttonAccentDark: "#17325b",
-        labelBackground: "#edf4fb",
-        labelText: "#234a86",
-        metaBackground: "#f7f8fb",
-        metaText: "#374151",
-        takeawayBackground: "#eef4fb",
-        takeawayBorder: "#d4e2f5",
-        takeawayText: "#123f73",
-        cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(35,74,134,0.05)"
-      };
-    }
-
-    return {
-      accent: "#5b53c9",
-      accentDark: "#4b44af",
-      buttonAccent: "#5b53c9",
-      buttonAccentDark: "#4b44af",
-      labelBackground: "#f3f1ff",
-      labelText: "#5b53c9",
-      metaBackground: "#f7f7fb",
-      metaText: "#374151",
-      takeawayBackground: "#eef4fb",
-      takeawayBorder: "#d4e2f5",
-      takeawayText: "#123f73",
-      cardShadow: "0 1px 3px rgba(0,0,0,0.08),0 8px 30px rgba(91,83,201,0.05)"
-    };
-  }
-
-  function extractTakeawaySection(bodyHtml) {
-    const source = String(bodyHtml || "").trim();
-    if (!source) return { bodyHtml: "", takeawaysHtml: "" };
-
-    const labeledListMatch = source.match(
-      /(<p\b[^>]*>[\s\S]*?(?:Key Takeaways|What You['’]ll Learn|What you['’]ll learn|In this webinar|In this session)[\s\S]*?<\/p>\s*)((?:<ul\b[\s\S]*?<\/ul>)|(?:<ol\b[\s\S]*?<\/ol>))/i
-    );
-    if (labeledListMatch) {
-      const fullMatch = labeledListMatch[0];
-      const introHtml = labeledListMatch[1];
-      const listHtml = labeledListMatch[2];
-      return {
-        bodyHtml: source.replace(fullMatch, "").trim(),
-        takeawaysHtml: `${introHtml}${listHtml}`.trim()
-      };
-    }
-
-    const firstListMatch = source.match(/(<ul\b[\s\S]*?<\/ul>|<ol\b[\s\S]*?<\/ol>)/i);
-    if (!firstListMatch) {
-      return { bodyHtml: source, takeawaysHtml: "" };
-    }
-
-    return {
-      bodyHtml: source.replace(firstListMatch[0], "").trim(),
-      takeawaysHtml: firstListMatch[0].trim()
-    };
-  }
-
-  function buildSpeakerCardsMarkup(speakers, fontStack) {
-    if (!speakers.length) return "";
-
-    return speakers.map(speaker => `
-      <table class="webcast-speaker-card" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border:1px solid #f0f0f0;border-radius:12px;background:#ffffff;table-layout:fixed;">
-        <tr>
-          ${speaker.image ? `<td class="webcast-speaker-image-wrap" width="136" style="padding:24px 0 24px 24px;vertical-align:middle;">
-            <img class="webcast-speaker-image" src="${speaker.image.replace(/"/g, "&quot;")}" alt="${(speaker.name || "Speaker").replace(/"/g, "&quot;")}" style="display:block;width:96px;max-width:96px;height:96px;border-radius:14px;border:0;object-fit:cover;">
-          </td>` : ""}
-          <td class="webcast-speaker-copy" style="padding:24px;vertical-align:middle;font-family:${fontStack};color:#1f2937;word-break:break-word;overflow-wrap:anywhere;">
-            <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#9ca3af;">Speaker</p>
-            <p style="margin:4px 0 0;font-size:17px;font-weight:700;color:#111827;">${speaker.name || ""}</p>
-            <p style="margin:10px 0 0;font-size:13px;line-height:1.8;color:#6b7280;">${speaker.role || ""}</p>
-          </td>
-        </tr>
-      </table>`).join('<div style="height:14px;line-height:14px;">&nbsp;</div>');
+    return source;
   }
 
   function saveState() {
     if (isRestoringState) return;
+
+    saveCleanupSettingsForMode(outputMode);
 
     const state = {
       previewMode,
@@ -628,16 +641,14 @@ window.addEventListener("DOMContentLoaded", () => {
       inputHtml: inputHtml?.value || "",
       adId: adIdInput?.value || "",
       stealthLink: stealthLinkInput?.value || "",
+      headerOuterBg: headerOuterBgColor?.value || "",
+      footerOuterBg: footerOuterBgColor?.value || "",
       headerBg: headerBgColor?.value || "",
       footerBg: footerBgColor?.value || "",
       matchFooterColor: !!toggleMatchFooterColor?.checked,
       showDividers: !!toggleShowDividers?.checked,
-      literalFullEmail: !!toggleLiteralFullEmail?.checked,
-      keepStyles: !!document.getElementById("toggleKeepStyles")?.checked,
-      removePreview: !!document.getElementById("toggleRemovePreview")?.checked,
-      removeTitle: !!document.getElementById("toggleRemoveTitle")?.checked,
-      removeScripts: !!document.getElementById("toggleRemoveScripts")?.checked,
-      templateOptionsOpen
+      cleanupOptionsByMode,
+      templateDrawerOpen
     };
 
     try {
@@ -660,32 +671,48 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       if (typeof state.adId === "string" && adIdInput) adIdInput.value = state.adId;
       if (typeof state.stealthLink === "string" && stealthLinkInput) stealthLinkInput.value = state.stealthLink;
+      if (typeof state.headerOuterBg === "string" && headerOuterBgColor) headerOuterBgColor.value = state.headerOuterBg;
+      if (typeof state.footerOuterBg === "string" && footerOuterBgColor) footerOuterBgColor.value = state.footerOuterBg;
       if (typeof state.headerBg === "string" && headerBgColor) headerBgColor.value = state.headerBg;
       if (typeof state.footerBg === "string" && footerBgColor) footerBgColor.value = state.footerBg;
       if (toggleMatchFooterColor) toggleMatchFooterColor.checked = !!state.matchFooterColor;
       if (toggleShowDividers) toggleShowDividers.checked = !!state.showDividers;
-      if (toggleLiteralFullEmail) toggleLiteralFullEmail.checked = !!state.literalFullEmail;
-      if (document.getElementById("toggleKeepStyles")) {
-        document.getElementById("toggleKeepStyles").checked = state.keepStyles ?? defaultCleanupOptions.keepStyles;
-      }
-      if (document.getElementById("toggleRemovePreview")) {
-        document.getElementById("toggleRemovePreview").checked = state.removePreview ?? defaultCleanupOptions.removePreview;
-      }
-      if (document.getElementById("toggleRemoveTitle")) {
-        document.getElementById("toggleRemoveTitle").checked = state.removeTitle ?? defaultCleanupOptions.removeTitle;
-      }
-      if (document.getElementById("toggleRemoveScripts")) {
-        document.getElementById("toggleRemoveScripts").checked = state.removeScripts ?? defaultCleanupOptions.removeScripts;
+      cleanupOptionsByMode = structuredClone(defaultCleanupOptionsByMode);
+      if (state.cleanupOptionsByMode && typeof state.cleanupOptionsByMode === "object") {
+        cleanupOptionsByMode.fragment = {
+          ...defaultCleanupOptionsByMode.fragment,
+          ...(state.cleanupOptionsByMode.fragment || {})
+        };
+        cleanupOptionsByMode.full = {
+          ...defaultCleanupOptionsByMode.full,
+          ...(state.cleanupOptionsByMode.full || {})
+        };
+      } else {
+        cleanupOptionsByMode.fragment = {
+          ...defaultCleanupOptionsByMode.fragment,
+          keepStyles: state.keepStyles ?? defaultCleanupOptionsByMode.fragment.keepStyles,
+          removePreview: state.removePreview ?? defaultCleanupOptionsByMode.fragment.removePreview,
+          removeTitle: state.removeTitle ?? defaultCleanupOptionsByMode.fragment.removeTitle,
+          removeScripts: state.removeScripts ?? defaultCleanupOptionsByMode.fragment.removeScripts
+        };
+        cleanupOptionsByMode.full = {
+          ...defaultCleanupOptionsByMode.full,
+          literalFullEmail: state.literalFullEmail ?? defaultCleanupOptionsByMode.full.literalFullEmail,
+          removePreview: state.removePreview ?? defaultCleanupOptionsByMode.full.removePreview,
+          removeTitle: state.removeTitle ?? defaultCleanupOptionsByMode.full.removeTitle,
+          removeScripts: state.removeScripts ?? defaultCleanupOptionsByMode.full.removeScripts,
+          protectBrandLayout: state.protectBrandLayout ?? defaultCleanupOptionsByMode.full.protectBrandLayout
+        };
       }
       lastCleanerShowDividers = !!state.showDividers;
       lastCleanerOutputMode = state.outputMode === "fragment" ? "fragment" : "full";
-      templateOptionsOpen = !!state.templateOptionsOpen;
+      templateDrawerOpen = !!state.templateDrawerOpen;
 
       syncFooterColorState();
       updateColorLabels();
       setBuilderMode("cleaner");
       setOutputMode(lastCleanerOutputMode);
-      setViewMode(["desktop", "mobile", "code", "dark"].includes(state.previewMode) ? state.previewMode : "desktop");
+      setViewMode(["desktop", "mobile", "compare", "code", "dark"].includes(state.previewMode) ? state.previewMode : "desktop");
       isRestoringState = false;
       return true;
     } catch (err) {
@@ -695,39 +722,19 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function fetchWebcastData() {
-    let payloadText = webcastJsonInput?.value.trim() || "";
-    const url = webcastUrlInput?.value.trim() || "";
+  function updateHelpBadge() {
+    if (!helpUpdateBadge) return;
+    const seenVersion = window.localStorage.getItem(HELP_UPDATES_STORAGE_KEY) || "";
+    helpUpdateBadge.hidden = seenVersion === HELP_UPDATES_VERSION;
+  }
 
-    if (!payloadText && url) {
-      const identifiers = extractOn24Identifiers(url);
-      if (!identifiers) {
-        throw new Error("That ON24 URL format was not recognized.");
-      }
-
-      const endpoint = `https://event.on24.com/apic/eventRegistration/EventServlet?sessionid=1&key=${identifiers.key}&eventid=${identifiers.eventId}&cb=${Date.now()}`;
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error(`Fetch failed with status ${response.status}.`);
-      }
-      payloadText = await response.text();
-      if (webcastJsonInput) webcastJsonInput.value = payloadText;
-    }
-
-    if (!payloadText) {
-      throw new Error("Paste an ON24 URL or EventServlet JSON first.");
-    }
-
-    let parsed;
+  function markHelpUpdatesSeen() {
     try {
-      parsed = JSON.parse(payloadText);
+      window.localStorage.setItem(HELP_UPDATES_STORAGE_KEY, HELP_UPDATES_VERSION);
     } catch (err) {
-      throw new Error("The EventServlet payload is not valid JSON.");
+      console.error(err);
     }
-
-    const webcastData = parseOn24EventPayload(parsed);
-    populateWebcastFields(webcastData);
-    updatePreview();
+    updateHelpBadge();
   }
 
   function hasValidFullEmailSelection() {
@@ -745,15 +752,19 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderStatus(level, pillText, message) {
+    currentStatusLevel = level;
+    currentStatusText = pillText;
+
     if (statusPill) {
-      statusPill.textContent = pillText;
+      statusPill.textContent = `${pillText} • ${currentStatusSizeText}`;
       statusPill.className = `status-pill ${level}`;
     }
 
     if (statusMessage) {
       statusMessage.textContent = message;
-      statusMessage.className = `status-card ${level}`;
+      statusMessage.className = "status-message";
     }
+
   }
 
   function getHtmlSizeBytes(html) {
@@ -768,37 +779,64 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderEmailSize(bytes) {
-    if (!emailSizePill) return;
+    currentStatusSizeText = formatHtmlSize(bytes);
+    if (statusPill) {
+      statusPill.textContent = `${currentStatusText} • ${currentStatusSizeText}`;
+      statusPill.className = `status-pill ${currentStatusLevel}`;
+    }
+  }
 
-    const level = bytes >= 90 * 1024 ? "warn" : "size";
-    emailSizePill.textContent = formatHtmlSize(bytes);
-    emailSizePill.className = `status-pill ${level}`;
+  function renderAdIdStatus() {
+    if (!adIdStatusPill) return;
+
+    const adId = (adIdInput?.value || "").trim();
+    if (!adId) {
+      adIdStatusPill.textContent = "";
+      adIdStatusPill.hidden = true;
+      return;
+    }
+
+    adIdStatusPill.textContent = `Ad ID ${adId}`;
+    adIdStatusPill.hidden = false;
   }
 
   function updateTemplateOptionsVisibility() {
     const canEditTemplate = outputMode === "full" && !!brandSelect.value;
 
     if (!canEditTemplate) {
-      templateOptionsOpen = false;
+      templateDrawerOpen = false;
+    }
+
+    if (appEl) {
+      appEl.classList.toggle("template-open", canEditTemplate && templateDrawerOpen);
+      appEl.classList.toggle("cleanup-open", cleanupDrawerOpen);
+      appEl.classList.toggle("tracking-open", trackingDrawerOpen);
+      appEl.classList.toggle("qa-open", qaDrawerOpen);
     }
 
     if (toggleTemplateOptionsBtn) {
       toggleTemplateOptionsBtn.hidden = !canEditTemplate;
-      toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateOptionsOpen && canEditTemplate));
-      toggleTemplateOptionsBtn.classList.toggle("is-open", templateOptionsOpen && canEditTemplate);
-      const label = toggleTemplateOptionsBtn.querySelector(".btn-label");
-      if (label) {
-        label.textContent = templateOptionsOpen && canEditTemplate ? "Hide template styles" : "Edit template styles";
-      }
+      toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateDrawerOpen && canEditTemplate));
     }
 
-    if (templateControls) {
-      templateControls.hidden = !(canEditTemplate && templateOptionsOpen);
+    if (templateDialog) {
+      templateDialog.classList.toggle("is-open", canEditTemplate && templateDrawerOpen);
+      templateDialog.setAttribute("aria-hidden", String(!(canEditTemplate && templateDrawerOpen)));
+    }
+
+    if (trackingDialog) {
+      trackingDialog.classList.toggle("is-open", trackingDrawerOpen);
+      trackingDialog.setAttribute("aria-hidden", String(!trackingDrawerOpen));
+    }
+
+    if (qaDialog) {
+      qaDialog.classList.toggle("is-open", qaDrawerOpen);
+      qaDialog.setAttribute("aria-hidden", String(!qaDrawerOpen));
     }
 
     if (brandHelperText) {
       brandHelperText.textContent = outputMode === "full"
-        ? "Required for full branded email."
+        ? "Used only for full branded email."
         : "Not used in code fragment mode.";
     }
 
@@ -806,17 +844,268 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateCleanupOptionsAvailability() {
-    const cleanupDetails = document.getElementById("toggleKeepStyles")?.closest(".advanced-options");
-    const fragmentCleanupEnabled = outputMode === "fragment";
+    const isFullMode = outputMode === "full";
+    const preserveFullTemplate = isFullMode && !!toggleLiteralFullEmail?.checked;
+    const keepStylesInput = document.getElementById("toggleKeepStyles");
+    const removePreviewInput = document.getElementById("toggleRemovePreview");
+    const removeTitleInput = document.getElementById("toggleRemoveTitle");
+    const removeScriptsInput = document.getElementById("toggleRemoveScripts");
+    const protectBrandLayoutInput = document.getElementById("toggleProtectBrandLayout");
 
-    cleanupToggleIds.forEach(id => {
-      const toggle = document.getElementById(id);
-      if (toggle) toggle.disabled = !fragmentCleanupEnabled;
+    if (cleanupModeTitle) {
+      cleanupModeTitle.textContent = isFullMode
+        ? (preserveFullTemplate ? "Cleanup unavailable" : "Cleanup")
+        : "Fragment cleanup";
+    }
+
+    if (cleanupModeNote) {
+      cleanupModeNote.textContent = isFullMode
+        ? (preserveFullTemplate
+          ? "Turn off Preserve full client template to use these cleanup options."
+          : "Use only when preserving the full client template is off.")
+        : "Use Keep embedded styles to preserve client styling.";
+    }
+
+    if (keepStylesRow) {
+      keepStylesRow.hidden = isFullMode;
+    }
+
+    if (fullHandlingPanel) {
+      fullHandlingPanel.hidden = !isFullMode;
+    }
+
+    if (fullHandlingNote) {
+      fullHandlingNote.textContent = preserveFullTemplate
+        ? "Inject-only mode leaves the client email structure intact."
+        : "Use these only when the full email needs extra handling.";
+    }
+
+    [
+      [removePreviewRow, removePreviewInput],
+      [removeTitleRow, removeTitleInput],
+      [removeScriptsRow, removeScriptsInput]
+    ].forEach(([row, input]) => {
+      if (!row || !input) return;
+      row.classList.toggle("is-disabled", preserveFullTemplate);
+      input.disabled = preserveFullTemplate;
     });
 
-    if (cleanupDetails) {
-      cleanupDetails.classList.toggle("is-disabled", !fragmentCleanupEnabled);
-      cleanupDetails.setAttribute("aria-disabled", String(!fragmentCleanupEnabled));
+    if (protectBrandLayoutRow && protectBrandLayoutInput) {
+      protectBrandLayoutRow.classList.toggle("is-disabled", preserveFullTemplate);
+      protectBrandLayoutInput.disabled = preserveFullTemplate;
+    }
+
+    if (literalFullEmailRow) {
+      literalFullEmailRow.classList.toggle("is-disabled", !isFullMode);
+    }
+
+    if (toggleLiteralFullEmail) {
+      toggleLiteralFullEmail.disabled = !isFullMode;
+    }
+
+    if (protectBrandLayoutInput) {
+      protectBrandLayoutInput.disabled = !isFullMode || preserveFullTemplate;
+    }
+
+    if (keepStylesInput) {
+      keepStylesInput.disabled = false;
+    }
+  }
+
+  function setCleanupDrawerOpen(isOpen) {
+    cleanupDrawerOpen = !!isOpen;
+    if (cleanupDrawerOpen) {
+      templateDrawerOpen = false;
+      trackingDrawerOpen = false;
+      qaDrawerOpen = false;
+    }
+
+    if (appEl) {
+      appEl.classList.toggle("cleanup-open", cleanupDrawerOpen);
+      appEl.classList.toggle("template-open", templateDrawerOpen);
+      appEl.classList.toggle("tracking-open", trackingDrawerOpen);
+      appEl.classList.toggle("qa-open", qaDrawerOpen);
+    }
+
+    if (cleanupDialog) {
+      cleanupDialog.classList.toggle("is-open", cleanupDrawerOpen);
+      cleanupDialog.setAttribute("aria-hidden", String(!cleanupDrawerOpen));
+    }
+
+    if (cleanupSettingsBtn) {
+      cleanupSettingsBtn.setAttribute("aria-expanded", String(cleanupDrawerOpen));
+    }
+
+    if (templateDialog) {
+      templateDialog.classList.toggle("is-open", templateDrawerOpen && outputMode === "full" && !!brandSelect.value);
+      templateDialog.setAttribute("aria-hidden", String(!(templateDrawerOpen && outputMode === "full" && !!brandSelect.value)));
+    }
+
+    if (toggleTemplateOptionsBtn) {
+      toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateDrawerOpen && outputMode === "full" && !!brandSelect.value));
+    }
+
+    if (trackingDialog) {
+      trackingDialog.classList.toggle("is-open", trackingDrawerOpen);
+      trackingDialog.setAttribute("aria-hidden", String(!trackingDrawerOpen));
+    }
+    if (trackingToolBtn) {
+      trackingToolBtn.setAttribute("aria-expanded", String(trackingDrawerOpen));
+    }
+
+    if (qaDialog) {
+      qaDialog.classList.toggle("is-open", qaDrawerOpen);
+      qaDialog.setAttribute("aria-hidden", String(!qaDrawerOpen));
+    }
+    if (qaToolBtn) {
+      qaToolBtn.setAttribute("aria-expanded", String(qaDrawerOpen));
+    }
+  }
+
+  function setTemplateDrawerOpen(isOpen) {
+    const canEditTemplate = outputMode === "full" && !!brandSelect.value;
+    templateDrawerOpen = !!isOpen && canEditTemplate;
+    if (templateDrawerOpen) {
+      cleanupDrawerOpen = false;
+      trackingDrawerOpen = false;
+      qaDrawerOpen = false;
+    }
+
+    if (appEl) {
+      appEl.classList.toggle("template-open", templateDrawerOpen);
+      appEl.classList.toggle("cleanup-open", cleanupDrawerOpen);
+      appEl.classList.toggle("tracking-open", trackingDrawerOpen);
+      appEl.classList.toggle("qa-open", qaDrawerOpen);
+    }
+
+    if (templateDialog) {
+      templateDialog.classList.toggle("is-open", templateDrawerOpen);
+      templateDialog.setAttribute("aria-hidden", String(!templateDrawerOpen));
+    }
+
+    if (toggleTemplateOptionsBtn) {
+      toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateDrawerOpen));
+    }
+
+    if (cleanupDialog) {
+      cleanupDialog.classList.toggle("is-open", cleanupDrawerOpen);
+      cleanupDialog.setAttribute("aria-hidden", String(!cleanupDrawerOpen));
+    }
+
+    if (cleanupSettingsBtn) {
+      cleanupSettingsBtn.setAttribute("aria-expanded", String(cleanupDrawerOpen));
+    }
+
+    if (trackingDialog) {
+      trackingDialog.classList.toggle("is-open", trackingDrawerOpen);
+      trackingDialog.setAttribute("aria-hidden", String(!trackingDrawerOpen));
+    }
+    if (trackingToolBtn) {
+      trackingToolBtn.setAttribute("aria-expanded", String(trackingDrawerOpen));
+    }
+
+    if (qaDialog) {
+      qaDialog.classList.toggle("is-open", qaDrawerOpen);
+      qaDialog.setAttribute("aria-hidden", String(!qaDrawerOpen));
+    }
+    if (qaToolBtn) {
+      qaToolBtn.setAttribute("aria-expanded", String(qaDrawerOpen));
+    }
+  }
+
+  function setTrackingDrawerOpen(isOpen) {
+    trackingDrawerOpen = !!isOpen;
+    if (trackingDrawerOpen) {
+      cleanupDrawerOpen = false;
+      templateDrawerOpen = false;
+      qaDrawerOpen = false;
+    }
+
+    if (appEl) {
+      appEl.classList.toggle("tracking-open", trackingDrawerOpen);
+      appEl.classList.toggle("cleanup-open", cleanupDrawerOpen);
+      appEl.classList.toggle("template-open", templateDrawerOpen);
+      appEl.classList.toggle("qa-open", qaDrawerOpen);
+    }
+
+    if (trackingDialog) {
+      trackingDialog.classList.toggle("is-open", trackingDrawerOpen);
+      trackingDialog.setAttribute("aria-hidden", String(!trackingDrawerOpen));
+    }
+    if (trackingToolBtn) {
+      trackingToolBtn.setAttribute("aria-expanded", String(trackingDrawerOpen));
+    }
+
+    if (cleanupDialog) {
+      cleanupDialog.classList.toggle("is-open", cleanupDrawerOpen);
+      cleanupDialog.setAttribute("aria-hidden", String(!cleanupDrawerOpen));
+    }
+    if (cleanupSettingsBtn) {
+      cleanupSettingsBtn.setAttribute("aria-expanded", String(cleanupDrawerOpen));
+    }
+
+    if (templateDialog) {
+      templateDialog.classList.toggle("is-open", templateDrawerOpen && outputMode === "full" && !!brandSelect.value);
+      templateDialog.setAttribute("aria-hidden", String(!(templateDrawerOpen && outputMode === "full" && !!brandSelect.value)));
+    }
+    if (toggleTemplateOptionsBtn) {
+      toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateDrawerOpen && outputMode === "full" && !!brandSelect.value));
+    }
+
+    if (qaDialog) {
+      qaDialog.classList.toggle("is-open", qaDrawerOpen);
+      qaDialog.setAttribute("aria-hidden", String(!qaDrawerOpen));
+    }
+    if (qaToolBtn) {
+      qaToolBtn.setAttribute("aria-expanded", String(qaDrawerOpen));
+    }
+  }
+
+  function setQaDrawerOpen(isOpen) {
+    qaDrawerOpen = !!isOpen;
+    if (qaDrawerOpen) {
+      cleanupDrawerOpen = false;
+      templateDrawerOpen = false;
+      trackingDrawerOpen = false;
+    }
+
+    if (appEl) {
+      appEl.classList.toggle("qa-open", qaDrawerOpen);
+      appEl.classList.toggle("cleanup-open", cleanupDrawerOpen);
+      appEl.classList.toggle("template-open", templateDrawerOpen);
+      appEl.classList.toggle("tracking-open", trackingDrawerOpen);
+    }
+
+    if (qaDialog) {
+      qaDialog.classList.toggle("is-open", qaDrawerOpen);
+      qaDialog.setAttribute("aria-hidden", String(!qaDrawerOpen));
+    }
+    if (qaToolBtn) {
+      qaToolBtn.setAttribute("aria-expanded", String(qaDrawerOpen));
+    }
+
+    if (cleanupDialog) {
+      cleanupDialog.classList.toggle("is-open", cleanupDrawerOpen);
+      cleanupDialog.setAttribute("aria-hidden", String(!cleanupDrawerOpen));
+    }
+    if (cleanupSettingsBtn) {
+      cleanupSettingsBtn.setAttribute("aria-expanded", String(cleanupDrawerOpen));
+    }
+
+    if (templateDialog) {
+      templateDialog.classList.toggle("is-open", templateDrawerOpen && outputMode === "full" && !!brandSelect.value);
+      templateDialog.setAttribute("aria-hidden", String(!(templateDrawerOpen && outputMode === "full" && !!brandSelect.value)));
+    }
+    if (toggleTemplateOptionsBtn) {
+      toggleTemplateOptionsBtn.setAttribute("aria-expanded", String(templateDrawerOpen && outputMode === "full" && !!brandSelect.value));
+    }
+
+    if (trackingDialog) {
+      trackingDialog.classList.toggle("is-open", trackingDrawerOpen);
+      trackingDialog.setAttribute("aria-hidden", String(!trackingDrawerOpen));
+    }
+    if (trackingToolBtn) {
+      trackingToolBtn.setAttribute("aria-expanded", String(trackingDrawerOpen));
     }
   }
 
@@ -824,20 +1113,26 @@ window.addEventListener("DOMContentLoaded", () => {
     let client = inputHtml.value.trim();
     const applyFragmentCleanup = options.applyFragmentCleanup ?? (outputMode === "fragment");
     const preserveFullExportLayout = !!options.preserveFullExportLayout;
-    const keepStyles = applyFragmentCleanup ? document.getElementById("toggleKeepStyles")?.checked : true;
-    const removeScriptsEnabled = applyFragmentCleanup && document.getElementById("toggleRemoveScripts")?.checked;
+    const injectIntoClientTemplate = preserveFullExportLayout && !applyFragmentCleanup;
+    const keepStyles = document.getElementById("toggleKeepStyles")?.checked !== false;
+    const removeScriptsEnabled = !injectIntoClientTemplate && !!document.getElementById("toggleRemoveScripts")?.checked;
+    const protectBrandLayout = !applyFragmentCleanup && !injectIntoClientTemplate && !!document.getElementById("toggleProtectBrandLayout")?.checked;
 
     if (!client) {
       client = sampleClientHtml.trim();
     }
 
-    client = stripKnownBrandWrappers(client);
+    const originalHead = extractHeadHtml(client);
+    const originalHtmlAttrs = extractHtmlOpenTag(client);
+    const originalBodyAttrs = extractBodyOpenTag(client);
 
-    const sourceHead = extractHeadHtml(client);
-    const sourceHtmlAttrs = extractHtmlOpenTag(client);
-    const sourceBodyAttrs = extractBodyOpenTag(client);
+    client = stripKnownBrandWrappers(client, { preserveLayoutScaffolding: applyFragmentCleanup });
 
-    if (applyFragmentCleanup && document.getElementById("toggleRemoveTitle")?.checked) {
+    const sourceHead = extractHeadHtml(client) || originalHead;
+    const sourceHtmlAttrs = extractHtmlOpenTag(client) || originalHtmlAttrs;
+    const sourceBodyAttrs = extractBodyOpenTag(client) || originalBodyAttrs;
+
+    if (!injectIntoClientTemplate && document.getElementById("toggleRemoveTitle")?.checked) {
       client = removeTitleTag(client);
     }
 
@@ -863,8 +1158,13 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (applyFragmentCleanup && document.getElementById("toggleRemovePreview")?.checked) {
+    if (!injectIntoClientTemplate && document.getElementById("toggleRemovePreview")?.checked) {
       client = removeClientPreheader(client);
+    }
+
+    if (protectBrandLayout) {
+      preservedHeadMarkup = sanitizeStyleMarkupForBrandLayout(preservedHeadMarkup);
+      client = sanitizeStyleMarkupForBrandLayout(client);
     }
 
     return {
@@ -879,31 +1179,24 @@ window.addEventListener("DOMContentLoaded", () => {
     const brandKey = brandSelect.value;
     const brand = brandPresets[brandKey];
     const useLiteralFullEmail = !!toggleLiteralFullEmail?.checked && !!inputHtml.value.trim();
-    const {
-      clientHtml,
-      preservedHeadMarkup,
-      bodyAttributes,
-      htmlAttributes
-    } = getProcessedClientContent({
-      applyFragmentCleanup: false,
-      preserveFullExportLayout: useLiteralFullEmail
-    });
 
     if (!brand) {
       return "";
     }
-
-    const headMarkup = useLiteralFullEmail
-      ? (preservedHeadMarkup || `
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">`)
-      : (preservedHeadMarkup ? `${preservedHeadMarkup}\n` : "\n");
+    const headerOuterBg = headerOuterBgColor?.value || "#ffffff";
+    const footerOuterBg = (toggleMatchFooterColor?.checked ? headerOuterBg : footerOuterBgColor?.value) || "#ffffff";
+    const headerBg = headerBgColor?.value || "#ffffff";
+    const footerBg = (toggleMatchFooterColor?.checked ? headerBg : footerBgColor?.value) || "#ffffff";
     const preserveDefaultSurface =
-      (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
-      (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
+      headerOuterBg.toLowerCase() === "#ffffff" &&
+      footerOuterBg.toLowerCase() === "#ffffff" &&
+      headerBg.toLowerCase() === "#ffffff" &&
+      footerBg.toLowerCase() === "#ffffff";
     const brandOptions = {
-      headerBg: headerBgColor?.value || "#ffffff",
-      footerBg: (toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff",
+      headerOuterBg,
+      footerOuterBg,
+      headerBg,
+      footerBg,
       showDividers: toggleShowDividers?.checked !== false,
       headerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="header"' : "",
       footerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="footer"' : ""
@@ -911,15 +1204,40 @@ window.addEventListener("DOMContentLoaded", () => {
     const brandHeader = typeof brand.renderHeader === "function" ? brand.renderHeader(brandOptions) : brand.header;
     const brandFooter = typeof brand.renderFooter === "function" ? brand.renderFooter(brandOptions) : brand.footer;
     const trackingMarkup = buildTrackingMarkup();
-    const contentMarkup = trackingMarkup ? `${trackingMarkup}\n${clientHtml}` : clientHtml;
+
+    if (useLiteralFullEmail) {
+      const clientSource = inputHtml.value.trim() || sampleClientHtml.trim();
+      const injectedDocument = injectBrandIntoClientDocument(clientSource, {
+        brandHeader,
+        brandFooter,
+        trackingMarkup
+      });
+
+      if (injectedDocument) {
+        return injectedDocument;
+      }
+    }
+
+    const {
+      clientHtml,
+      preservedHeadMarkup,
+      bodyAttributes,
+      htmlAttributes
+    } = getProcessedClientContent({
+      applyFragmentCleanup: false,
+      preserveFullExportLayout: false
+    });
+
+    const headMarkup = preservedHeadMarkup ? `${preservedHeadMarkup}\n` : "\n";
+    const contentMarkup = insertTrackingMarkupNearTop(clientHtml, trackingMarkup);
 
     return `<!DOCTYPE html>
-<html${useLiteralFullEmail && htmlAttributes ? ` ${htmlAttributes}` : ' lang="en"'}>
+<html${htmlAttributes ? ` ${htmlAttributes}` : ' lang="en"'}>
 <head>
-${useLiteralFullEmail ? `${headMarkup}` : `<meta charset="utf-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cobrand Email</title>
-${headMarkup}`}</head>
+${headMarkup}</head>
 <body ${bodyAttributes}>
 <!-- COBRAND_HEADER_START -->
 ${brandHeader}
@@ -932,255 +1250,10 @@ ${brandFooter}
 </html>`;
   }
 
-  function buildWebcastContentHtml() {
-    const brandKey = brandSelect.value;
-    const theme = getWebcastTheme(brandKey);
-    const {
-      eventType,
-      headline,
-      date,
-      time,
-      duration,
-      bodyHtml,
-      sponsorLogo,
-      speakers,
-      ctaUrl,
-      ctaLabel
-    } = getWebcastFields();
-    const sections = extractTakeawaySection(bodyHtml);
-    const mainBodyHtml = sections.bodyHtml || bodyHtml || "<p>Webcast description goes here.</p>";
-    const takeawaysHtml = sections.takeawaysHtml;
-    const fontStack = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
-    const buttonColor = theme.buttonAccent || theme.accent;
-
-    const normalizedTime = time
-      ? time
-          .replace(/\bEastern Daylight Time\b/i, "ET")
-          .replace(/\bEastern Standard Time\b/i, "ET")
-          .replace(/\bEastern Time\b/i, "ET")
-      : "";
-    const timeLine = [normalizedTime, duration].filter(Boolean).join(", ");
-    const metaRows = [];
-    if (date) metaRows.push({ icon: "&#128197;", text: date });
-    if (timeLine) metaRows.push({ icon: "&#128340;", text: timeLine });
-
-    const sponsorMarkup = sponsorLogo ? `
-      <tr>
-        <td data-webcast-sponsor="true" style="padding:28px 40px 28px 40px;text-align:center;font-family:${fontStack};font-size:14px;line-height:1.5;color:#4b5563;">
-          <div style="margin:0 0 12px 0;font-size:12px;line-height:1.2;font-weight:700;color:#111827;">This event is sponsored by</div>
-          <img src="${sponsorLogo.replace(/"/g, "&quot;")}" alt="Sponsor logo" style="display:block;max-width:220px;width:100%;height:auto;border:0;margin:0 auto;">
-        </td>
-      </tr>` : "";
-
-    const topCtaMarkup = ctaUrl ? `
-      <tr>
-        <td style="padding:28px 40px 0;text-align:center;">
-          <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:${buttonColor};color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 48px;border-radius:10px;text-decoration:none;box-shadow:0 2px 8px rgba(17,24,39,0.12);">
-            ${ctaLabel}
-          </a>
-        </td>
-      </tr>` : "";
-
-    const takeawaysMarkup = takeawaysHtml ? `
-      <tr>
-        <td style="padding:24px 40px 0 40px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${theme.takeawayBackground};border:1px solid ${theme.takeawayBorder};border-radius:12px;">
-            <tr>
-              <td style="padding:22px 24px;font-family:${fontStack};font-size:15px;line-height:1.65;color:${theme.takeawayText};">
-                <div style="margin:0 0 12px 0;font-size:11px;line-height:1.2;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${theme.accent};">Key Takeaways</div>
-                ${takeawaysHtml}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>` : "";
-
-    const speakerMarkup = speakers.length ? `
-      <tr>
-        <td style="padding:32px 40px 0 40px;">
-          ${buildSpeakerCardsMarkup(speakers, fontStack)}
-        </td>
-      </tr>` : "";
-
-    const bottomCtaMarkup = ctaUrl ? `
-      <tr>
-        <td style="padding:28px 40px 0;text-align:center;">
-          <a href="${ctaUrl.replace(/"/g, "&quot;")}" target="_blank" style="display:inline-block;background:${buttonColor};color:#ffffff;font-family:${fontStack};font-size:15px;font-weight:700;padding:14px 48px;border-radius:10px;text-decoration:none;box-shadow:0 2px 8px rgba(17,24,39,0.12);">
-            ${ctaLabel}
-          </a>
-        </td>
-      </tr>` : "";
-
-    const metaMarkup = metaRows.length ? `
-      <tr>
-        <td style="padding:20px 40px 0;text-align:center;">
-          <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
-            <tr>
-              ${metaRows.map((row, index) => `
-                <td class="webcast-meta-cell" style="padding:0 0 8px 0;">
-                  <table role="presentation" cellpadding="0" cellspacing="0" style="background:${theme.metaBackground};border-radius:8px;">
-                    <tr>
-                      <td style="padding:8px 14px;font-family:${fontStack};font-size:13px;color:${theme.metaText};font-weight:500;white-space:nowrap;">
-                        ${row.icon} ${row.text}
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-                ${index < metaRows.length - 1 ? '<td style="width:8px;"></td>' : ""}`).join("")}
-            </tr>
-          </table>
-        </td>
-      </tr>` : "";
-
-    return `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background:#eef1f4;">
-  <tr>
-    <td align="center" style="padding:32px 20px;">
-      <table class="webcast-card" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:${theme.cardShadow};">
-        <tr>
-          <td style="padding:32px 40px 0;text-align:center;">
-            <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
-              <tr>
-                <td style="background:${theme.labelBackground};color:${theme.labelText};font-family:${fontStack};font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 16px;border-radius:100px;">
-                  ${eventType || "Webinar"}
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td class="webcast-headline" style="padding:20px 40px 0;text-align:center;font-family:${fontStack};font-size:28px;line-height:1.3;color:#111827;font-weight:800;letter-spacing:-0.3px;">
-            ${headline || "Webcast title"}
-          </td>
-        </tr>
-        ${metaMarkup}
-        ${topCtaMarkup}
-        <tr>
-          <td class="webcast-copy" style="padding:24px 40px 0;font-family:${fontStack};font-size:15px;line-height:1.7;color:#444444;">
-            ${mainBodyHtml}
-          </td>
-        </tr>
-        ${bottomCtaMarkup}
-        ${takeawaysMarkup}
-        ${speakerMarkup}
-        ${sponsorMarkup}
-      </table>
-    </td>
-  </tr>
-</table>`;
-  }
-
-  function buildWebcastEmailHtml() {
-    const brandKey = brandSelect.value;
-    const brand = brandPresets[brandKey];
-
-    if (!brand) {
-      return "";
-    }
-
-    const preserveDefaultSurface =
-      (headerBgColor?.value || "#ffffff").toLowerCase() === "#ffffff" &&
-      (((toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff").toLowerCase() === "#ffffff");
-    const brandOptions = {
-      headerBg: headerBgColor?.value || "#ffffff",
-      footerBg: (toggleMatchFooterColor?.checked ? headerBgColor?.value : footerBgColor?.value) || "#ffffff",
-      showDividers: toggleShowDividers?.checked !== false,
-      headerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="header"' : "",
-      footerDarkAttr: preserveDefaultSurface ? 'data-cobrand-preserve-light="footer"' : ""
-    };
-    const brandHeader = typeof brand.renderHeader === "function" ? brand.renderHeader(brandOptions) : brand.header;
-    const brandFooter = typeof brand.renderFooter === "function" ? brand.renderFooter(brandOptions) : brand.footer;
-    const trackingMarkup = buildTrackingMarkup();
-    const webcastMarkup = buildWebcastContentHtml();
-
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Webcast Invite</title>
-<style>
-  .webcast-speaker-card {
-    width: 100% !important;
-    table-layout: fixed !important;
-  }
-  .webcast-copy img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-  .webcast-copy table {
-    max-width: 100% !important;
-  }
-  .webcast-copy td,
-  .webcast-copy th {
-    max-width: 100% !important;
-  }
-  .webcast-copy p,
-  .webcast-copy ul,
-  .webcast-copy ol,
-  .webcast-speaker-copy,
-  .webcast-speaker-copy p {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-  @media only screen and (max-width:600px) {
-    .webcast-headline {
-      font-size: 24px !important;
-      line-height: 1.25 !important;
-    }
-    .webcast-card {
-      border-radius: 14px !important;
-    }
-    .webcast-meta-cell {
-      display: block !important;
-      width: 100% !important;
-      padding-bottom: 8px !important;
-    }
-    .webcast-speaker-image-wrap {
-      display: block !important;
-      width: 100% !important;
-      padding: 24px 24px 0 24px !important;
-      text-align: center !important;
-    }
-    .webcast-speaker-image {
-      width: 88px !important;
-      max-width: 88px !important;
-      height: 88px !important;
-      margin: 0 auto !important;
-    }
-    .webcast-speaker-copy {
-      display: block !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      text-align: center !important;
-      padding: 16px 20px 24px 20px !important;
-      overflow-wrap: anywhere !important;
-      word-break: break-word !important;
-      white-space: normal !important;
-    }
-    .webcast-copy,
-    .webcast-meta-cell {
-      width: 100% !important;
-    }
-  }
-</style>
-</head>
-<body style="background:#eef1f4;margin:0;padding:0;">
-<!-- COBRAND_HEADER_START -->
-${brandHeader}
-<!-- COBRAND_HEADER_END -->
-${trackingMarkup ? `${trackingMarkup}\n` : ""}${webcastMarkup}
-<!-- COBRAND_FOOTER_START -->
-${brandFooter}
-<!-- COBRAND_FOOTER_END -->
-</body>
-</html>`;
-  }
-
   function buildFragmentHtml() {
     const { clientHtml, preservedHeadMarkup } = getProcessedClientContent({ applyFragmentCleanup: true });
     const trackingMarkup = buildTrackingMarkup();
-    const contentMarkup = trackingMarkup ? `${trackingMarkup}\n${clientHtml}` : clientHtml;
+    const contentMarkup = insertTrackingMarkupNearTop(clientHtml, trackingMarkup);
     return preservedHeadMarkup ? `${preservedHeadMarkup}\n${contentMarkup}`.trim() : contentMarkup;
   }
 
@@ -1303,9 +1376,9 @@ ${brandFooter}
 </script>`;
   }
 
-  function buildPreviewDoc(finalHtml) {
-    const isDark = previewMode === "dark";
-    const isMobile = previewMode === "mobile";
+  function buildPreviewDoc(finalHtml, modeOverride = previewMode) {
+    const isDark = modeOverride === "dark";
+    const isMobile = modeOverride === "mobile";
 
     let previewHead = "";
     let previewContent = finalHtml;
@@ -1337,10 +1410,11 @@ ${previewHead}
     margin:0;
     padding:0;
     background:${isDark ? "#0b1220" : "#d7dee6"};
+    overflow:hidden;
   }
   body{
     font-family:Arial,Helvetica,sans-serif;
-    overflow-x:${isMobile ? "auto" : "hidden"};
+    overflow:hidden;
   }
   .stage{
     padding:${isMobile ? "0" : "28px"};
@@ -1362,9 +1436,197 @@ ${gmailDarkScript}
 </html>`;
   }
 
+  function buildSourcePreviewDoc(sourceHtml) {
+    const rawSource = (sourceHtml || "").trim() || sampleClientHtml.trim();
+    const isMobile = previewMode === "mobile";
+
+    let previewHead = "";
+    let previewContent = rawSource;
+
+    const headMatch = rawSource.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
+    const bodyMatch = rawSource.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+
+    if (headMatch || bodyMatch) {
+      previewHead = headMatch ? headMatch[1].trim() : "";
+      previewContent = bodyMatch ? bodyMatch[1].trim() : rawSource;
+    } else {
+      const { htmlWithoutStyles, styleBlocks } = extractStyleBlocks(rawSource);
+      previewHead = styleBlocks.join("\n");
+      previewContent = htmlWithoutStyles;
+    }
+
+    const shellStyle = isMobile
+      ? "width:100%;max-width:420px;margin:0;"
+      : "width:100%;margin:0 auto;";
+
+    return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+${previewHead}
+<style>
+  html,body{
+    margin:0;
+    padding:0;
+    background:#d7dee6;
+    overflow:hidden;
+  }
+  body{
+    font-family:Arial,Helvetica,sans-serif;
+    overflow:hidden;
+  }
+  .stage{
+    padding:${isMobile ? "0" : "28px"};
+    overflow-x:${isMobile ? "auto" : "visible"};
+  }
+  .shell{
+    ${shellStyle}
+  }
+  .source-badge{
+    display:inline-block;
+    margin:0 0 14px 0;
+    padding:8px 12px;
+    border-radius:999px;
+    background:#eef2ff;
+    color:#4338ca;
+    font:600 12px/1 Arial,Helvetica,sans-serif;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="source-badge">Source preview</div>
+    <div class="shell">
+      ${previewContent}
+    </div>
+  </div>
+</body>
+</html>`;
+  }
+
+  function resizePreviewFrame(frame, fallbackHeight = 420) {
+    if (!frame) return;
+
+    try {
+      const doc = frame.contentDocument;
+      const body = doc?.body;
+      const html = doc?.documentElement;
+      if (!body || !html) return;
+
+      frame.style.height = "0px";
+      const measuredHeight = Math.max(
+        body.scrollHeight,
+        body.offsetHeight,
+        html.scrollHeight,
+        html.offsetHeight,
+        fallbackHeight
+      );
+
+      frame.style.height = `${measuredHeight}px`;
+    } catch (err) {
+      frame.style.height = `${fallbackHeight}px`;
+    }
+  }
+
+  function resizePreviewFrames() {
+    const baseHeight = previewMode === "mobile" ? 560 : 420;
+    if (previewMode !== "code") {
+      resizePreviewFrame(previewFrame, baseHeight);
+    }
+
+    if (previewMode === "compare" && sourcePreviewFrame) {
+      resizePreviewFrame(sourcePreviewFrame, 420);
+    }
+
+    if (previewMode === "code" && codePreviewFrame) {
+      resizePreviewFrame(codePreviewFrame, getCodePreviewMode() === "mobile" ? 560 : 420);
+    }
+  }
+
+  function schedulePreviewResize() {
+    window.requestAnimationFrame(() => {
+      resizePreviewFrames();
+      window.setTimeout(resizePreviewFrames, 80);
+      window.setTimeout(resizePreviewFrames, 220);
+    });
+  }
+
   function runQA(finalHtml, rawClient) {
     const issues = [];
     const finalBytes = new TextEncoder().encode(finalHtml || "").length;
+    const addCheck = ({ passed, passTitle, passText, failTitle, failText }) => {
+      issues.push({
+        level: passed ? "ok" : "warn",
+        title: passed ? passTitle : failTitle,
+        text: passed ? passText : failText
+      });
+    };
+    const linkTags = finalHtml.match(/<a\b[^>]*>/gi) || [];
+    const hrefValues = [];
+    let linksMissingHref = 0;
+    let emptyHrefCount = 0;
+    let placeholderHrefCount = 0;
+    let malformedHrefCount = 0;
+    let nonHttpsHrefCount = 0;
+
+    const isDynamicLink = value =>
+      /@\{[^}]+\}@/.test(value) ||
+      /\{\{[\s\S]+?\}\}/.test(value) ||
+      /%%[^%]+%%/.test(value);
+
+    const isAllowedNonHttpLink = value =>
+      /^(mailto:|tel:)/i.test(value);
+
+    const isPlaceholderLink = value => {
+      const normalized = value.trim().toLowerCase();
+      return normalized === "#" ||
+        normalized === "/#" ||
+        normalized === "javascript:void(0)" ||
+        normalized === "javascript:void(0);" ||
+        normalized === "javascript:;" ||
+        normalized === "about:blank";
+    };
+
+    linkTags.forEach(tag => {
+      const hrefMatch = tag.match(/\bhref\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      if (!hrefMatch) {
+        linksMissingHref++;
+        return;
+      }
+
+      const hrefValue = (hrefMatch[2] || hrefMatch[3] || hrefMatch[4] || "").trim();
+      hrefValues.push(hrefValue);
+
+      if (!hrefValue) {
+        emptyHrefCount++;
+        return;
+      }
+
+      if (isDynamicLink(hrefValue)) {
+        return;
+      }
+
+      if (isPlaceholderLink(hrefValue)) {
+        placeholderHrefCount++;
+        return;
+      }
+
+      if (isAllowedNonHttpLink(hrefValue)) {
+        return;
+      }
+
+      try {
+        const parsed = new URL(hrefValue);
+        if (parsed.protocol === "http:") {
+          nonHttpsHrefCount++;
+        } else if (parsed.protocol !== "https:") {
+          malformedHrefCount++;
+        }
+      } catch (err) {
+        malformedHrefCount++;
+      }
+    });
 
     const imgTags = finalHtml.match(/<img\b[^>]*>/gi) || [];
     let missingAlt = 0;
@@ -1372,49 +1634,89 @@ ${gmailDarkScript}
       if (!/\balt\s*=/i.test(tag)) missingAlt++;
     });
 
-    if (missingAlt) {
-      issues.push({
-        level: "warn",
-        title: `${missingAlt} image(s) missing alt text`,
-        text: "Add descriptive alt attributes to all image tags for accessibility and deliverability."
-      });
-    }
+    addCheck({
+      passed: missingAlt === 0,
+      passTitle: "Image alt text looks good",
+      passText: "",
+      failTitle: `${missingAlt} image(s) missing alt text`,
+      failText: "Add descriptive alt text to improve accessibility and email client support."
+    });
+
+    addCheck({
+      passed: linksMissingHref === 0,
+      passTitle: "All links include href",
+      passText: "",
+      failTitle: `${linksMissingHref} link(s) missing href`,
+      failText: "One or more links do not have a destination URL yet."
+    });
+
+    addCheck({
+      passed: emptyHrefCount === 0,
+      passTitle: "No empty links found",
+      passText: "",
+      failTitle: `${emptyHrefCount} empty link(s) found`,
+      failText: "Fill in the missing destination so the link can be clicked."
+    });
+
+    addCheck({
+      passed: placeholderHrefCount === 0,
+      passTitle: "No placeholder links found",
+      passText: "",
+      failTitle: `${placeholderHrefCount} placeholder link(s) found`,
+      failText: "Replace placeholder values like `#` or `javascript:void(0)` with real URLs."
+    });
+
+    addCheck({
+      passed: malformedHrefCount === 0,
+      passTitle: "All links look valid",
+      passText: "",
+      failTitle: `${malformedHrefCount} malformed link(s) found`,
+      failText: "At least one link does not look like a complete, valid URL."
+    });
+
+    addCheck({
+      passed: nonHttpsHrefCount === 0,
+      passTitle: "All web links use HTTPS",
+      passText: "",
+      failTitle: `${nonHttpsHrefCount} non-HTTPS link(s) found`,
+      failText: "Use HTTPS where possible so links stay secure and less likely to be flagged."
+    });
 
     const externalCss = rawClient.match(/<link\b[^>]*stylesheet[^>]*>/gi) || [];
-    if (externalCss.length) {
-      issues.push({
-        level: "warn",
-        title: "External stylesheet linked",
-        text: "Most email clients ignore external CSS. Use inline styles instead."
-      });
-    }
+    addCheck({
+      passed: externalCss.length === 0,
+      passTitle: "No external stylesheet links found",
+      passText: "",
+      failTitle: "External stylesheet linked",
+      failText: "Most email clients ignore external stylesheets, so these styles may not render."
+    });
 
     const scriptTags = rawClient.match(/<script\b/gi) || [];
-    if (scriptTags.length) {
-      issues.push({
-        level: "warn",
-        title: "Script tags detected",
-        text: "Scripts are not supported in email and should be removed."
-      });
-    }
+    addCheck({
+      passed: scriptTags.length === 0,
+      passTitle: "No script tags detected",
+      passText: "",
+      failTitle: "Script tags detected",
+      failText: "Scripts are not supported in email and should be removed before send."
+    });
 
     const forms = rawClient.match(/<form\b/gi) || [];
-    if (forms.length) {
-      issues.push({
-        level: "warn",
-        title: "Form markup detected",
-        text: "Forms usually do not work in email clients."
-      });
-    }
+    addCheck({
+      passed: forms.length === 0,
+      passTitle: "No form markup detected",
+      passText: "",
+      failTitle: "Form markup detected",
+      failText: "Most email clients do not support forms reliably."
+    });
 
     const videos = rawClient.match(/<video\b/gi) || [];
-    if (videos.length) {
-      issues.push({
-        level: "warn",
-        title: "Video markup detected",
-        text: "Embedded video is unsupported in many email clients, especially Outlook."
-      });
-    }
+    addCheck({
+      passed: videos.length === 0,
+      passTitle: "No video markup detected",
+      passText: "",
+      failTitle: "Video markup detected",
+      failText: "Embedded video often fails in email clients, especially Outlook."
+    });
 
     const outlookChecks = [
       { pattern: /display\s*:\s*flex/gi, label: "display:flex" },
@@ -1427,33 +1729,31 @@ ${gmailDarkScript}
       .filter(check => check.pattern.test(finalHtml))
       .map(check => check.label);
 
-    if (outlookUnsafe.length) {
-      issues.push({
-        level: "warn",
-        title: "Potential Outlook compatibility issues",
-        text: `Found ${outlookUnsafe.join(", ")}. Desktop Outlook may ignore or break these styles.`
-      });
-    }
+    addCheck({
+      passed: outlookUnsafe.length === 0,
+      passTitle: "No major Outlook-risky CSS found",
+      passText: "",
+      failTitle: "Potential Outlook compatibility issues",
+      failText: outlookUnsafe.length ? `Found ${outlookUnsafe.join(", ")}. Outlook may ignore or break these styles.` : ""
+    });
 
     if (finalBytes >= 102 * 1024) {
       issues.push({
         level: "warn",
         title: "Email is very large",
-        text: `This email is about ${Math.round(finalBytes / 1024)} KB. Gmail may clip messages once they get close to 102 KB.`
+        text: `${Math.round(finalBytes / 1024)} KB. Gmail may clip emails once they get close to 102 KB.`
       });
     } else if (finalBytes >= 90 * 1024) {
       issues.push({
         level: "warn",
         title: "Email size is getting high",
-        text: `This email is about ${Math.round(finalBytes / 1024)} KB. It may be worth trimming before send.`
+        text: `${Math.round(finalBytes / 1024)} KB. It may be worth trimming before send.`
       });
-    }
-
-    if (!issues.length) {
+    } else {
       issues.push({
         level: "ok",
-        title: "No major issues detected",
-        text: "Basic checks look good."
+        title: "Email size looks safe",
+        text: `${Math.round(finalBytes / 1024)} KB`
       });
     }
 
@@ -1462,25 +1762,69 @@ ${gmailDarkScript}
 
   function renderQA(issues) {
     const warnCount = issues.filter(i => i.level === "warn").length;
+    const failedChecks = issues.filter(i => i.level === "warn");
+    const passedChecks = issues.filter(i => i.level === "ok");
     qaCount.textContent = warnCount ? `${warnCount} warning${warnCount === 1 ? "" : "s"}` : "0 issues";
     qaCount.className = `qa-pill ${warnCount ? "high" : "ok"}`;
 
-    qaReport.innerHTML = issues.map(item => `
-      <div class="qa-item ${item.level}">
-        <div class="qa-title">${item.title}</div>
-        <div class="qa-text">${item.text}</div>
+    if (qaSummary) {
+      qaSummary.className = `qa-summary ${warnCount ? "warn" : "ok"}`;
+    }
+
+    if (qaSummaryText) {
+      qaSummaryText.textContent = warnCount
+        ? `${warnCount} item${warnCount === 1 ? "" : "s"} need attention before export.`
+        : `${passedChecks.length} checks passed.`;
+    }
+
+    const renderCheck = (item, icon) => `
+      <div class="qa-check ${item.level}">
+        <span class="qa-check-icon" aria-hidden="true">${icon}</span>
+        <div class="qa-check-copy">
+          <div class="qa-check-title">${item.title}</div>
+          <div class="qa-check-text">${item.text}</div>
+        </div>
       </div>
-    `).join("");
+    `;
+
+    qaReport.innerHTML = `
+      ${failedChecks.length ? `
+        <section class="qa-group">
+          <div class="qa-group-title">Fails · ${failedChecks.length}</div>
+          <div class="qa-checklist">
+            ${failedChecks.map(item => renderCheck(item, "✕")).join("")}
+          </div>
+        </section>
+      ` : ""}
+      ${passedChecks.length ? `
+        <section class="qa-group">
+          <div class="qa-group-title">Passes · ${passedChecks.length}</div>
+          <div class="qa-checklist">
+            ${passedChecks.map(item => renderCheck(item, "✓")).join("")}
+          </div>
+        </section>
+      ` : ""}
+    `.trim();
   }
 
   function renderQABaseline() {
     qaCount.textContent = "0 issues";
     qaCount.className = "qa-pill ok";
+    if (qaSummary) qaSummary.className = "qa-summary ok";
+    if (qaSummaryText) qaSummaryText.textContent = "Checks will appear here after output is generated.";
     qaReport.innerHTML = `
-      <div class="qa-item ok">
-        <div class="qa-title">Checks will appear here</div>
-        <div class="qa-text">Once output is generated, this panel will flag email compatibility and size issues.</div>
-      </div>
+      <section class="qa-group">
+        <div class="qa-group-title">Passes</div>
+        <div class="qa-checklist">
+          <div class="qa-check ok">
+            <span class="qa-check-icon" aria-hidden="true">✓</span>
+            <div class="qa-check-copy">
+              <div class="qa-check-title">Checks will appear here</div>
+              <div class="qa-check-text">Once output is generated, this panel will list the QA results in this checklist.</div>
+            </div>
+          </div>
+        </div>
+      </section>
     `;
   }
 
@@ -1512,10 +1856,312 @@ ${gmailDarkScript}
     return formatted.trim();
   }
 
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function highlightHtmlCode(source) {
+    const placeholders = [];
+    let html = escapeHtml(source || "");
+
+    const stash = (className, content) => {
+      const token = `\uE000${placeholders.length}\uE001`;
+      placeholders.push({ token, markup: `<span class="${className}">${content}</span>` });
+      return token;
+    };
+
+    html = html.replace(/&lt;!--[\s\S]*?--&gt;/g, match => stash("code-comment", match));
+    html = html.replace(/&lt;!DOCTYPE[\s\S]*?&gt;/gi, match => stash("code-doctype", match));
+    html = html.replace(/\{\{[\s\S]*?\}\}/g, match => stash("code-template", match));
+    html = html.replace(/&lt;\/?[\w:-]+(?:\s+[\w:@.-]+(?:\s*=\s*(?:"[^"]*"|'[^']*'))?)*\s*\/?&gt;/g, match => {
+      let tagMarkup = match;
+
+      tagMarkup = tagMarkup.replace(/^(&lt;\/?)([\w:-]+)/, (_, bracket, tagName) =>
+        `${stash("code-bracket", bracket)}${stash("code-tag", tagName)}`
+      );
+
+      tagMarkup = tagMarkup.replace(/([\w:@.-]+)(\s*=\s*)("[^"]*"|'[^']*')/g, (_, attr, equals, value) =>
+        `${stash("code-attr", attr)}${stash("code-bracket", equals)}${stash("code-string", value)}`
+      );
+
+      tagMarkup = tagMarkup.replace(/(\/?&gt;)$/, ending => stash("code-bracket", ending));
+
+      return tagMarkup;
+    });
+    html = html.replace(/&(?!lt;|gt;|amp;quot;|quot;)(?:[a-z0-9#]+);/gi, match => stash("code-entity", match));
+
+    placeholders.slice().reverse().forEach(({ token, markup }) => {
+      html = html.replaceAll(token, markup);
+    });
+
+    return html;
+  }
+
+  function syncCodeHighlight() {
+    if (!codeHighlight || !codeOutputInner) return;
+    codeHighlight.innerHTML = `${highlightHtmlCode(codeOutputInner.value)}\n`;
+    applyCodeFindHighlights();
+    codeHighlight.scrollTop = codeOutputInner.scrollTop;
+    codeHighlight.scrollLeft = codeOutputInner.scrollLeft;
+  }
+
+  function syncCodeHighlightScroll() {
+    if (!codeHighlight || !codeOutputInner) return;
+    codeHighlight.scrollTop = codeOutputInner.scrollTop;
+    codeHighlight.scrollLeft = codeOutputInner.scrollLeft;
+  }
+
+  function scheduleCodeHighlightScrollSync() {
+    if (codeScrollSyncFrame) return;
+    codeScrollSyncFrame = window.requestAnimationFrame(() => {
+      codeScrollSyncFrame = null;
+      syncCodeHighlightScroll();
+    });
+  }
+
+  function scrollActiveCodeFindHitIntoView() {
+    if (!codeHighlight || !codeOutputInner) return;
+    const activeHit = codeHighlight.querySelector(".code-find-hit-active");
+    if (!activeHit) return;
+
+    const containerRect = codeHighlight.getBoundingClientRect();
+    const hitRect = activeHit.getBoundingClientRect();
+    const topDelta = hitRect.top - containerRect.top;
+    const targetTop = Math.max(0, codeHighlight.scrollTop + topDelta - codeHighlight.clientHeight * 0.35);
+
+    codeHighlight.scrollTop = targetTop;
+    codeOutputInner.scrollTop = targetTop;
+    codeHighlight.scrollLeft = 0;
+    codeOutputInner.scrollLeft = 0;
+  }
+
+  function getActiveOutputHtml() {
+    return outputStore.isEdited ? outputStore.editedHtml : outputStore.generatedHtml;
+  }
+
+  function getCodePreviewMode() {
+    return ["mobile", "dark"].includes(lastVisualPreviewMode) ? lastVisualPreviewMode : "desktop";
+  }
+
+  function setCodeEditing(isEditing) {
+    isCodeEditing = !!isEditing;
+
+    if (codeOutputInner) {
+      codeOutputInner.readOnly = !isCodeEditing;
+      codeOutputInner.classList.toggle("is-editing", isCodeEditing);
+    }
+
+    if (codeHighlight) {
+      codeHighlight.classList.toggle("is-editing", isCodeEditing);
+    }
+
+    if (codeFindBar) {
+      codeFindBar.hidden = !isCodeEditing;
+    }
+
+    if (!isCodeEditing) {
+      closeCodeFind();
+    }
+
+    if (editCodeBtn) {
+      editCodeBtn.classList.toggle("is-active", isCodeEditing);
+    }
+    if (editCodeBtnLabel) {
+      editCodeBtnLabel.textContent = isCodeEditing ? "Done editing" : "Edit code";
+    }
+    if (editCodeBtnIcon) {
+      editCodeBtnIcon.textContent = isCodeEditing ? "🔓" : "🔒";
+    }
+  }
+
+  function updateCodeEditorUi() {
+    if (codeEditStatus) {
+      if (outputStore.isEdited) {
+        codeEditStatus.textContent = "Preview reflects manual code edits.";
+      } else if (isCodeEditing) {
+        codeEditStatus.textContent = "Live preview updates after you stop typing.";
+      } else {
+        codeEditStatus.textContent = "Generated output. Click Edit code to make changes or search.";
+      }
+    }
+
+    if (revertCodeBtn) {
+      revertCodeBtn.hidden = !outputStore.isEdited;
+    }
+
+    if (!isCodeEditing && codeFindBar && !codeFindBar.hidden) {
+      closeCodeFind();
+    }
+
+    syncCodeHighlight();
+  }
+
+  function renderCodePreview(html) {
+    if (!codePreviewFrame) return;
+    codePreviewFrame.srcdoc = buildPreviewDoc(html, getCodePreviewMode());
+  }
+
+  function updateCodeFindCount() {
+    if (!codeFindCount) return;
+    if (!codeFindMatches.length) {
+      codeFindCount.textContent = "0 results";
+      return;
+    }
+    codeFindCount.textContent = `${codeFindIndex + 1} of ${codeFindMatches.length}`;
+  }
+
+  function clearCodeFindSelection() {
+    codeFindMatches = [];
+    codeFindIndex = -1;
+    codeFindQuery = "";
+    applyCodeFindHighlights();
+    updateCodeFindCount();
+  }
+
+  function applyCodeFindHighlights() {
+    if (!codeHighlight) return;
+
+    const existing = Array.from(codeHighlight.querySelectorAll(".code-find-hit, .code-find-hit-active"));
+    existing.forEach(node => {
+      const parent = node.parentNode;
+      if (!parent) return;
+      parent.replaceChild(document.createTextNode(node.textContent || ""), node);
+      parent.normalize();
+    });
+
+    if (!codeFindQuery || !codeFindMatches.length) {
+      return;
+    }
+
+    const query = codeFindQuery.toLowerCase();
+    let remainingActiveIndex = codeFindIndex;
+    const walker = document.createTreeWalker(codeHighlight, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    let textNode;
+
+    while ((textNode = walker.nextNode())) {
+      if (textNode.nodeValue) {
+        textNodes.push(textNode);
+      }
+    }
+
+    textNodes.forEach(node => {
+      const original = node.nodeValue || "";
+      const lower = original.toLowerCase();
+      let cursor = 0;
+      let found = lower.indexOf(query, cursor);
+
+      if (found === -1) return;
+
+      const fragment = document.createDocumentFragment();
+
+      while (found !== -1) {
+        if (found > cursor) {
+          fragment.appendChild(document.createTextNode(original.slice(cursor, found)));
+        }
+
+        const mark = document.createElement("mark");
+        const isActive = remainingActiveIndex === 0;
+        mark.className = isActive ? "code-find-hit-active" : "code-find-hit";
+        mark.textContent = original.slice(found, found + codeFindQuery.length);
+        fragment.appendChild(mark);
+
+        if (remainingActiveIndex >= 0) {
+          remainingActiveIndex -= 1;
+        }
+
+        cursor = found + codeFindQuery.length;
+        found = lower.indexOf(query, cursor);
+      }
+
+      if (cursor < original.length) {
+        fragment.appendChild(document.createTextNode(original.slice(cursor)));
+      }
+
+      node.parentNode?.replaceChild(fragment, node);
+    });
+  }
+
+  function runCodeFind(query, direction = "next", options = {}) {
+    if (!codeOutputInner) return;
+    const source = codeOutputInner.value || "";
+    const needle = String(query || "");
+    codeFindQuery = needle;
+    const moveEditorSelection = options.moveEditorSelection !== false;
+
+    if (!needle) {
+      clearCodeFindSelection();
+      return;
+    }
+
+    const lowerSource = source.toLowerCase();
+    const lowerNeedle = needle.toLowerCase();
+    const matches = [];
+    let startIndex = 0;
+
+    while (startIndex < lowerSource.length) {
+      const foundAt = lowerSource.indexOf(lowerNeedle, startIndex);
+      if (foundAt === -1) break;
+      matches.push({ start: foundAt, end: foundAt + needle.length });
+      startIndex = foundAt + Math.max(needle.length, 1);
+    }
+
+    codeFindMatches = matches;
+
+    if (!matches.length) {
+      codeFindIndex = -1;
+      applyCodeFindHighlights();
+      updateCodeFindCount();
+      return;
+    }
+
+    if (direction === "prev") {
+      codeFindIndex = codeFindIndex <= 0 ? matches.length - 1 : codeFindIndex - 1;
+    } else if (codeFindIndex < 0 || codeFindIndex >= matches.length - 1) {
+      codeFindIndex = 0;
+    } else {
+      codeFindIndex += 1;
+    }
+
+    const match = matches[codeFindIndex];
+    if (moveEditorSelection) {
+      codeOutputInner.setSelectionRange(match.start, match.end);
+      codeOutputInner.focus({ preventScroll: true });
+    }
+    applyCodeFindHighlights();
+    if (moveEditorSelection) {
+      scrollActiveCodeFindHitIntoView();
+    } else {
+      scheduleCodeHighlightScrollSync();
+    }
+    updateCodeFindCount();
+  }
+
+  function openCodeFind() {
+    if (previewMode !== "code" || !isCodeEditing || !codeFindBar || !codeFindInput) return;
+    codeFindInput.focus();
+    codeFindInput.select();
+    runCodeFind(codeFindInput.value, "next", { moveEditorSelection: false });
+  }
+
+  function closeCodeFind() {
+    if (!codeFindBar) return;
+    codeFindBar.hidden = true;
+    clearCodeFindSelection();
+  }
+
   function setViewMode(mode) {
     previewMode = mode;
+    if (mode !== "code" && mode !== "compare") {
+      lastVisualPreviewMode = mode;
+    }
     previewFrame.classList.toggle("is-mobile", mode === "mobile");
     previewFrame.classList.toggle("is-dark", mode === "dark");
+    sourcePreviewFrame?.classList.remove("is-mobile", "is-dark");
+    compareGrid?.classList.toggle("is-compare", mode === "compare");
 
     document.querySelectorAll(".mode-btn").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.previewMode === mode);
@@ -1524,6 +2170,8 @@ ${gmailDarkScript}
     if (mode === "code") {
       previewPane.classList.remove("active");
       codePane.classList.add("active");
+      renderCodePreview(getActiveOutputHtml());
+      updateCodeEditorUi();
     } else {
       codePane.classList.remove("active");
       previewPane.classList.add("active");
@@ -1531,7 +2179,6 @@ ${gmailDarkScript}
   }
 
   function setBuilderMode(mode) {
-    builderMode = "cleaner";
     appEl.classList.add("is-cleaner");
     document.querySelectorAll(".cleaner-only").forEach(section => {
       section.hidden = false;
@@ -1542,16 +2189,24 @@ ${gmailDarkScript}
   }
 
   function setOutputMode(mode) {
+    if (!isRestoringState && outputMode) {
+      saveCleanupSettingsForMode(outputMode);
+    }
+
     outputMode = mode;
     lastCleanerOutputMode = mode;
+
+    applyCleanupSettingsForMode(mode);
 
     outputModeSwitch?.querySelectorAll(".switch-btn").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.outputMode === mode);
     });
 
-    document.querySelectorAll("[data-mode-help]").forEach(el => {
-      el.hidden = el.getAttribute("data-mode-help") !== mode;
-    });
+    if (outputModeHint) {
+      outputModeHint.textContent = mode === "full"
+        ? "Adds your selected header and footer"
+        : "Outputs only cleaned client HTML";
+    }
 
     appEl.classList.toggle("is-fragment", mode === "fragment");
     updateCleanupOptionsAvailability();
@@ -1560,21 +2215,91 @@ ${gmailDarkScript}
     updatePreview();
   }
 
+  function renderActiveOutputHtml(activeHtml, options = {}) {
+    const finalBytes = getHtmlSizeBytes(activeHtml);
+    outputStore.html = activeHtml;
+    updateActionButtons();
+    renderEmailSize(finalBytes);
+    renderAdIdStatus();
+
+    if (!inputHtml.value.trim()) {
+      renderStatus("info", "Using sample", outputMode === "full"
+        ? "Showing a sample content block inside the selected brand template."
+        : "Showing sample content so you can preview the cleanup output before pasting real HTML.");
+    } else if (options.isEdited) {
+      renderStatus("info", "Edited output", "Preview reflects manual code edits. Revert to return to generated output.");
+    } else {
+      renderStatus("ok", "Output ready", outputMode === "full"
+        ? "Full branded email generated. Review the preview and QA checks, then copy or export."
+        : "Cleaned code generated. Review the preview and QA checks, then copy or export.");
+    }
+
+    if (previewMode === "code") {
+      renderCodePreview(activeHtml);
+    } else if (previewMode === "compare") {
+      previewFrame.srcdoc = buildPreviewDoc(activeHtml);
+      if (sourcePreviewFrame) {
+        sourcePreviewFrame.srcdoc = buildSourcePreviewDoc(inputHtml.value.trim());
+      }
+    } else {
+      previewFrame.srcdoc = buildPreviewDoc(activeHtml);
+    }
+
+    schedulePreviewResize();
+
+    const issues = runQA(activeHtml, inputHtml.value.trim());
+
+    renderQA(issues);
+  }
+
+  function applyManualCodeEdits() {
+    const editedHtml = codeOutputInner?.value || "";
+    const generatedHtml = outputStore.generatedHtml || "";
+    const hasEdits = editedHtml.trim() !== generatedHtml.trim();
+
+    outputStore.editedHtml = editedHtml;
+    outputStore.isEdited = hasEdits;
+    updateCodeEditorUi();
+    renderActiveOutputHtml(hasEdits ? editedHtml : generatedHtml, { isEdited: hasEdits });
+  }
+
+  function revertManualCodeEdits() {
+    outputStore.editedHtml = "";
+    outputStore.isEdited = false;
+    if (codeEditDebounceId) {
+      window.clearTimeout(codeEditDebounceId);
+      codeEditDebounceId = null;
+    }
+    if (codeOutputInner) {
+      codeOutputInner.value = prettyPrintHtml(outputStore.generatedHtml || "");
+    }
+    setCodeEditing(false);
+    updateCodeEditorUi();
+    renderActiveOutputHtml(outputStore.generatedHtml || "", { isEdited: false });
+  }
+
   function updatePreview() {
     try {
       if (outputMode === "full" && !brandSelect.value) {
         outputStore.html = "";
+        outputStore.generatedHtml = "";
+        outputStore.editedHtml = "";
+        outputStore.isEdited = false;
+        updateCodeEditorUi();
         updateActionButtons();
         renderEmailSize(0);
+        renderAdIdStatus();
         renderStatus("warn", "Action needed", "Choose a brand to build a full branded email.");
 
-        if (previewMode === "code") {
-          codeOutputInner.value = "Choose a brand to generate a full branded email.";
-        } else {
+      if (previewMode === "code") {
+        codeOutputInner.value = "Choose a brand to generate a full branded email.";
+        syncCodeHighlight();
+        renderCodePreview("");
+      } else {
           previewFrame.srcdoc = `
             <html>
               <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
-                <div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#667085;padding:40px;text-align:center;">
+                <div style="min-height:280px;display:flex;align-items:center;justify-content:center;color:#667085;padding:40px;text-align:center;">
                   Choose a brand to generate a full branded email.
                 </div>
               </body>
@@ -1588,42 +2313,19 @@ ${gmailDarkScript}
       }
 
       const finalHtml = getCurrentOutputHtml();
-      const finalBytes = getHtmlSizeBytes(finalHtml);
-      outputStore.html = finalHtml;
-      updateActionButtons();
-      renderEmailSize(finalBytes);
-
-      if (!inputHtml.value.trim()) {
-        renderStatus("info", "Using sample", outputMode === "full"
-          ? "Showing a sample content block inside the selected brand template."
-          : "Showing sample content so you can preview the cleanup output before pasting real HTML.");
-      } else {
-        renderStatus("ok", "Output ready", outputMode === "full"
-          ? "Full branded email generated. Review the preview and QA checks, then copy or export."
-          : "Cleaned code generated. Review the preview and QA checks, then copy or export.");
+      outputStore.generatedHtml = finalHtml;
+      outputStore.editedHtml = "";
+      outputStore.isEdited = false;
+      setCodeEditing(false);
+      if (codeEditDebounceId) {
+        window.clearTimeout(codeEditDebounceId);
+        codeEditDebounceId = null;
       }
-
-      if (previewMode === "code") {
-        const pretty = prettyPrintHtml(finalHtml);
-        codeOutputInner.value = pretty;
-      } else {
-        previewFrame.srcdoc = buildPreviewDoc(finalHtml);
+      if (codeOutputInner) {
+        codeOutputInner.value = prettyPrintHtml(finalHtml);
       }
-
-      const issues = runQA(finalHtml, inputHtml.value.trim());
-
-      if (outputMode === "fragment") {
-        const styleBlocks = (finalHtml.match(/<style\b[\s\S]*?<\/style>/gi) || []).length;
-        if (styleBlocks) {
-          issues.unshift({
-            level: "ok",
-            title: `${styleBlocks} style block(s) kept`,
-            text: "Style blocks were preserved to protect responsiveness and email layout."
-          });
-        }
-      }
-
-      renderQA(issues);
+      updateCodeEditorUi();
+      renderActiveOutputHtml(finalHtml, { isEdited: false });
     } catch (err) {
       console.error(err);
       renderEmailSize(0);
@@ -1677,11 +2379,20 @@ ${gmailDarkScript}
     brandSelect.value = brandPresets[DEFAULT_BRAND] ? DEFAULT_BRAND : "";
     if (adIdInput) adIdInput.value = "";
     if (stealthLinkInput) stealthLinkInput.value = "";
-    if (toggleLiteralFullEmail) toggleLiteralFullEmail.checked = false;
+    if (toggleLiteralFullEmail) toggleLiteralFullEmail.checked = defaultCleanupOptions.literalFullEmail;
     outputStore.html = "";
+    outputStore.generatedHtml = "";
+    outputStore.editedHtml = "";
+    outputStore.isEdited = false;
+    setCodeEditing(false);
     codeOutputInner.value = "";
+    if (codePreviewFrame) codePreviewFrame.srcdoc = "";
     if (copyBtnLabel) copyBtnLabel.textContent = "Copy HTML";
-    templateOptionsOpen = false;
+    updateCodeEditorUi();
+    templateDrawerOpen = false;
+    cleanupDrawerOpen = false;
+    trackingDrawerOpen = false;
+    qaDrawerOpen = false;
     setOutputMode("full");
     setViewMode("desktop");
     resetTemplateOptions();
@@ -1690,7 +2401,7 @@ ${gmailDarkScript}
     previewFrame.srcdoc = `
       <html>
         <body style="margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;">
-          <div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#667085;">
+          <div style="min-height:280px;display:flex;align-items:center;justify-content:center;color:#667085;padding:32px;text-align:center;">
             Paste HTML in the side panel to see it displayed here.
           </div>
         </body>
@@ -1698,6 +2409,7 @@ ${gmailDarkScript}
     `;
 
     renderStatus("info", "Ready", "Paste client HTML to begin. You can also drop in an .html file.");
+    renderAdIdStatus();
     renderQABaseline();
 
     updateActionButtons();
@@ -1707,7 +2419,13 @@ ${gmailDarkScript}
   function clearInputOnly() {
     inputHtml.value = "";
     outputStore.html = "";
+    outputStore.generatedHtml = "";
+    outputStore.editedHtml = "";
+    outputStore.isEdited = false;
+    setCodeEditing(false);
     codeOutputInner.value = "";
+    if (codePreviewFrame) codePreviewFrame.srcdoc = "";
+    updateCodeEditorUi();
     updatePreview();
     inputHtml.focus();
   }
@@ -1726,6 +2444,14 @@ ${gmailDarkScript}
 
   copyBtn.addEventListener("click", copyOutput);
   downloadBtn.addEventListener("click", downloadOutput);
+  previewFrame.addEventListener("load", schedulePreviewResize);
+  if (codePreviewFrame) {
+    codePreviewFrame.addEventListener("load", schedulePreviewResize);
+  }
+  if (sourcePreviewFrame) {
+    sourcePreviewFrame.addEventListener("load", schedulePreviewResize);
+  }
+  window.addEventListener("resize", schedulePreviewResize);
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
       clearAll();
@@ -1736,6 +2462,69 @@ ${gmailDarkScript}
     updatePreview();
     saveState();
   });
+  if (codeOutputInner) {
+    codeOutputInner.addEventListener("input", () => {
+      syncCodeHighlight();
+      if (codeFindBar && !codeFindBar.hidden) {
+        runCodeFind(codeFindInput?.value || "", "next", { moveEditorSelection: false });
+      }
+      if (codeEditDebounceId) {
+        window.clearTimeout(codeEditDebounceId);
+      }
+      codeEditDebounceId = window.setTimeout(() => {
+        applyManualCodeEdits();
+      }, 400);
+    });
+    codeOutputInner.addEventListener("scroll", scheduleCodeHighlightScrollSync);
+  }
+  if (codeFindInput) {
+    codeFindInput.addEventListener("input", () => {
+      codeFindIndex = -1;
+      runCodeFind(codeFindInput.value, "next", { moveEditorSelection: false });
+    });
+    codeFindInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        runCodeFind(codeFindInput.value, event.shiftKey ? "prev" : "next");
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeCodeFind();
+        codeOutputInner?.focus({ preventScroll: true });
+      }
+    });
+  }
+  if (codeFindNextBtn) {
+    codeFindNextBtn.addEventListener("click", () => {
+      runCodeFind(codeFindInput?.value || "", "next");
+    });
+  }
+  if (codeFindPrevBtn) {
+    codeFindPrevBtn.addEventListener("click", () => {
+      runCodeFind(codeFindInput?.value || "", "prev");
+    });
+  }
+  if (editCodeBtn) {
+    editCodeBtn.addEventListener("click", () => {
+      const previousScrollTop = codeOutputInner?.scrollTop ?? 0;
+      const previousScrollLeft = codeOutputInner?.scrollLeft ?? 0;
+      setCodeEditing(!isCodeEditing);
+      updateCodeEditorUi();
+      if (isCodeEditing) {
+        codeOutputInner?.focus({ preventScroll: true });
+        if (codeOutputInner) {
+          codeOutputInner.scrollTop = previousScrollTop;
+          codeOutputInner.scrollLeft = previousScrollLeft;
+        }
+        syncCodeHighlightScroll();
+      }
+    });
+  }
+  if (revertCodeBtn) {
+    revertCodeBtn.addEventListener("click", () => {
+      revertManualCodeEdits();
+    });
+  }
   brandSelect.addEventListener("change", () => {
     updateTemplateOptionsVisibility();
     updatePreview();
@@ -1758,8 +2547,15 @@ ${gmailDarkScript}
 
   if (toggleTemplateOptionsBtn) {
     toggleTemplateOptionsBtn.addEventListener("click", () => {
-      templateOptionsOpen = !templateOptionsOpen;
-      updateTemplateOptionsVisibility();
+      setTemplateDrawerOpen(!templateDrawerOpen);
+      saveState();
+    });
+  }
+
+  if (closeTemplateBtn) {
+    closeTemplateBtn.addEventListener("click", () => {
+      setTemplateDrawerOpen(false);
+      saveState();
     });
   }
 
@@ -1767,10 +2563,10 @@ ${gmailDarkScript}
     resetTemplateOptionsBtn.addEventListener("click", resetTemplateOptions);
   }
 
-  [headerBgColor, footerBgColor, toggleShowDividers].forEach(el => {
+  [headerOuterBgColor, headerBgColor, footerOuterBgColor, footerBgColor, toggleShowDividers].forEach(el => {
     if (el) {
       el.addEventListener("input", () => {
-        if (el === toggleShowDividers && builderMode === "cleaner") {
+        if (el === toggleShowDividers) {
           lastCleanerShowDividers = toggleShowDividers.checked;
         }
         updateColorLabels();
@@ -1778,7 +2574,7 @@ ${gmailDarkScript}
         saveState();
       });
       el.addEventListener("change", () => {
-        if (el === toggleShowDividers && builderMode === "cleaner") {
+        if (el === toggleShowDividers) {
           lastCleanerShowDividers = toggleShowDividers.checked;
         }
         updateColorLabels();
@@ -1796,16 +2592,21 @@ ${gmailDarkScript}
     });
   }
 
-  if (headerBgColor) {
-    headerBgColor.addEventListener("input", () => {
+  [headerOuterBgColor, headerBgColor].forEach(el => {
+    if (!el) return;
+    el.addEventListener("input", () => {
       syncFooterColorState();
     });
-  }
+  });
 
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       setViewMode(btn.dataset.previewMode);
-      updatePreview();
+      if (outputStore.isEdited) {
+        renderActiveOutputHtml(getActiveOutputHtml(), { isEdited: true });
+      } else {
+        updatePreview();
+      }
       saveState();
     });
   });
@@ -1842,13 +2643,16 @@ ${gmailDarkScript}
     if (el) {
       el.addEventListener("input", () => {
         updateStealthHelper();
+        renderAdIdStatus();
         updatePreview();
+        saveState();
       });
     }
   });
 
   if (toggleLiteralFullEmail) {
     toggleLiteralFullEmail.addEventListener("change", () => {
+      updateCleanupOptionsAvailability();
       updatePreview();
       saveState();
     });
@@ -1856,6 +2660,7 @@ ${gmailDarkScript}
 
   if (helpBtn && helpDialog) {
     helpBtn.addEventListener("click", () => {
+      markHelpUpdatesSeen();
       helpDialog.showModal();
     });
   }
@@ -1881,9 +2686,114 @@ ${gmailDarkScript}
     });
   }
 
+  if (cleanupSettingsBtn && cleanupDialog) {
+    cleanupSettingsBtn.addEventListener("click", () => {
+      setCleanupDrawerOpen(!cleanupDrawerOpen);
+    });
+  }
+
+  if (closeCleanupBtn && cleanupDialog) {
+    closeCleanupBtn.addEventListener("click", () => {
+      setCleanupDrawerOpen(false);
+    });
+  }
+
+  if (trackingToolBtn && trackingDialog) {
+    trackingToolBtn.addEventListener("click", () => {
+      setTrackingDrawerOpen(!trackingDrawerOpen);
+    });
+  }
+
+  if (closeTrackingBtn && trackingDialog) {
+    closeTrackingBtn.addEventListener("click", () => {
+      setTrackingDrawerOpen(false);
+    });
+  }
+
+  if (qaToolBtn && qaDialog) {
+    qaToolBtn.addEventListener("click", () => {
+      setQaDrawerOpen(!qaDrawerOpen);
+    });
+  }
+
+  if (closeQaBtn && qaDialog) {
+    closeQaBtn.addEventListener("click", () => {
+      setQaDrawerOpen(false);
+    });
+  }
+
+  document.addEventListener("click", event => {
+    const trigger = event.target.closest(".info-tip-trigger");
+    if (!trigger) {
+      if (!event.target.closest(".floating-tooltip")) {
+        closeInfoTips();
+      }
+      return;
+    }
+
+    const isSame = activeTooltipTrigger === trigger && floatingTooltip?.classList.contains("is-visible");
+    if (isSame) {
+      closeInfoTips();
+    } else {
+      showFloatingTooltip(trigger);
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f" && previewMode === "code" && isCodeEditing) {
+      event.preventDefault();
+      openCodeFind();
+      return;
+    }
+    if (event.key === "Escape") {
+      closeInfoTips();
+      if (previewMode === "code" && codeFindBar && !codeFindBar.hidden) {
+        closeCodeFind();
+      }
+    }
+  });
+
+  document.addEventListener("mouseover", event => {
+    const trigger = event.target.closest(".info-tip-trigger");
+    if (trigger) {
+      showFloatingTooltip(trigger);
+    }
+  });
+
+  document.addEventListener("mouseout", event => {
+    const trigger = event.target.closest(".info-tip-trigger");
+    if (!trigger) return;
+    const related = event.relatedTarget;
+    if (related && (trigger.contains(related) || related.closest?.(".floating-tooltip"))) return;
+    if (activeTooltipTrigger === trigger) {
+      hideFloatingTooltip();
+    }
+  });
+
+  document.addEventListener("focusin", event => {
+    const trigger = event.target.closest(".info-tip-trigger");
+    if (trigger) {
+      showFloatingTooltip(trigger);
+    }
+  });
+
+  document.addEventListener("focusout", event => {
+    const trigger = event.target.closest(".info-tip-trigger");
+    if (!trigger) return;
+    if (activeTooltipTrigger === trigger) {
+      hideFloatingTooltip();
+    }
+  });
+
+  window.addEventListener("scroll", () => {
+    if (activeTooltipTrigger) {
+      showFloatingTooltip(activeTooltipTrigger);
+    }
+  }, true);
 
   populateBrandOptions();
   const restoredState = restoreState();
+  updateHelpBadge();
   if (!restoredState) {
     clearAll();
     setBuilderMode("cleaner");
@@ -1894,6 +2804,10 @@ ${gmailDarkScript}
     updatePreview();
   }
   updateCleanupOptionsAvailability();
+  setCleanupDrawerOpen(false);
+  setTemplateDrawerOpen(false);
+  setTrackingDrawerOpen(false);
+  setQaDrawerOpen(false);
   updateColorLabels();
   syncFooterColorState();
   updateStealthHelper();

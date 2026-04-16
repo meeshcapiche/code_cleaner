@@ -11,12 +11,12 @@ export const thinkadvisor = createBrand({
     /<table[^>]*>\s*[\s\S]*?ThinkAdvisor-Arc-Logo-RGB-Color\.png[\s\S]*?confirmunsubscribelink[\s\S]*?<\/table>\s*/gi
   ],
   header: `
-<table __HEADER_DARK_ATTR__ role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">
+<table __HEADER_DARK_ATTR__ role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_OUTER_BG__" style="background:__HEADER_OUTER_BG__;">
 
   <tr>
-    <td align="center" bgcolor="__HEADER_BG__" style="background:__HEADER_BG__;">
+    <td align="center" bgcolor="__HEADER_OUTER_BG__" style="background:__HEADER_OUTER_BG__;">
 
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="__HEADER_BG__" style="width:100%;max-width:600px;margin:0 auto;background:__HEADER_BG__;">
 
         <tr>
           <td style="padding:10px 16px 12px 16px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:13px;line-height:1.2;color:#6f6f6f;text-align:center;">
@@ -48,14 +48,14 @@ export const thinkadvisor = createBrand({
 </table>
   `,
   footer: `
-<table __FOOTER_DARK_ATTR__ role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_BG__" style="background:__FOOTER_BG__;">
+<table __FOOTER_DARK_ATTR__ role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_OUTER_BG__" style="background:__FOOTER_OUTER_BG__;">
 
   __FOOTER_DIVIDER__
 
   <tr>
-    <td align="center" bgcolor="__FOOTER_BG__" style="background:__FOOTER_BG__;">
+    <td align="center" bgcolor="__FOOTER_OUTER_BG__" style="background:__FOOTER_OUTER_BG__;">
 
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="__FOOTER_BG__" style="width:100%;max-width:600px;margin:0 auto;background:__FOOTER_BG__;">
 
         <tr>
           <td style="padding:16px 16px 8px 16px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;font-size:14px;line-height:1.45;color:#6f6f6f;text-align:left;">
